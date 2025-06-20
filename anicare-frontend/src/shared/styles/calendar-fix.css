@@ -1,0 +1,33 @@
+/* Arregla navegación rota y botones invisibles en react-big-calendar + Bootstrap */
+
+.rbc-toolbar button {
+  background: none;
+  border: none;
+  padding: 6px 12px;
+  margin: 0 4px;
+  color: #0d6efd;
+  font-weight: 500;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.rbc-toolbar button:hover {
+  background-color: #e9ecef;
+}
+
+.rbc-toolbar button.rbc-active {
+  background-color: #0d6efd;
+  color: white;
+}
+
+.rbc-event {
+  background-color: #198754 !important; /* Bootstrap success */
+  border-radius: 4px;
+  padding: 2px 4px;
+  font-size: 0.85rem;
+  line-height: 1.2;
+}
+
+.rbc-agenda-view table {
+  font-size: 0.9rem;
+}
