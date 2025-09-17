@@ -1,5 +1,5 @@
-import { IPropietarioRepository } from '../interfaces/IPropietarioRepository';
-import { Propietario } from '../entities/Propietario';
+import { IPropietarioRepository } from '../../interfaces/IPropietarioRepository';
+import { Propietario } from '../../entities/Propietario';
 
 export class ObtenerTodosPropietariosUseCase {
   constructor(private propietarioRepository: IPropietarioRepository) {}

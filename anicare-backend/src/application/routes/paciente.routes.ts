@@ -1,7 +1,7 @@
 // src/application/routes/paciente.routes.ts
 import { Router } from 'express';
 import { PacienteController } from '../controllers/PacienteController';
-import { verifyToken } from '../middlewares/verifyToken';
+import { verifyToken } from '../middlewares/validarToken';
 
 const router = Router();
 

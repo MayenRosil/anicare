@@ -1,4 +1,4 @@
-import { ICitaRepository } from '../interfaces/ICitaRepository';
+import { ICitaRepository } from '../../interfaces/ICitaRepository';
 
 export class ActualizarEstadoCitaUseCase {
   constructor(private citaRepository: ICitaRepository) {}

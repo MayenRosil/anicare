@@ -5,10 +5,10 @@ export class Doctor {
     public id_usuario: number,
     public nombre: string,
     public apellido: string,
-    especialidad: string,
-    dpi: string,
-    telefono: string,
-    correo: string,
-    activo: boolean
+    public especialidad: string,
+    public dpi: string,
+    public telefono: string,
+    public correo: string,
+    public activo: boolean
   ) {}
 }

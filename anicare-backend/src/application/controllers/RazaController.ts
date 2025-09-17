@@ -2,7 +2,7 @@
 import { Request, Response } from 'express';
 import pool from '../../shared/config/db';
 import { RazaRepository } from '../../infrastructure/repositories/RazaRepository';
-import { ObtenerTodasRazasUseCase } from '../../domain/use-cases/ObtenerTodasRazasUseCase';
+import { ObtenerTodasRazasUseCase } from '../../domain/use-cases/raza/ObtenerTodasRazasUseCase';
 
 export class RazaController {
   static async listarTodos(req: Request, res: Response) : Promise<void>{

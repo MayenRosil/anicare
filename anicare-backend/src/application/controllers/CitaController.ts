@@ -1,10 +1,10 @@
 // src/application/controllers/CitaController.ts
 import { Request, Response } from 'express';
 import { CitaRepository } from '../../infrastructure/repositories/CitaRepository';
-import { CrearCitaUseCase } from '../../domain/use-cases/CrearCitaUseCase';
-import { ObtenerTodasCitasUseCase } from '../../domain/use-cases/ObtenerTodasCitasUseCase';
-import { ObtenerCitaPorIdUseCase } from '../../domain/use-cases/ObtenerCitaPorIdUseCase';
-import { ActualizarEstadoCitaUseCase } from '../../domain/use-cases/ActualizarEstadoCitaUseCase';
+import { CrearCitaUseCase } from '../../domain/use-cases/cita/CrearCitaUseCase';
+import { ObtenerTodasCitasUseCase } from '../../domain/use-cases/cita/ObtenerTodasCitasUseCase';
+import { ObtenerCitaPorIdUseCase } from '../../domain/use-cases/cita/ObtenerCitaPorIdUseCase';
+import { ActualizarEstadoCitaUseCase } from '../../domain/use-cases/cita/ActualizarEstadoCitaUseCase';
 
 export class CitaController {
   static async crear(req: Request, res: Response): Promise<void> {

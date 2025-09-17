@@ -1,6 +1,6 @@
 // src/domain/use-cases/CrearPropietarioUseCase.ts
-import { IPropietarioRepository } from '../interfaces/IPropietarioRepository';
-import { Propietario } from '../entities/Propietario';
+import { IPropietarioRepository } from '../../interfaces/IPropietarioRepository';
+import { Propietario } from '../../entities/Propietario';
 
 export class CrearPropietarioUseCase {
   constructor(private propietarioRepository: IPropietarioRepository) {}

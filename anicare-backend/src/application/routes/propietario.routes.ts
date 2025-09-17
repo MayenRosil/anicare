@@ -1,7 +1,7 @@
 // src/application/routes/propietario.routes.ts
 import { Router } from 'express';
 import { PropietarioController } from '../controllers/PropietarioController';
-import { verifyToken } from '../middlewares/verifyToken';
+import { verifyToken } from '../middlewares/validarToken';
 
 const router = Router();
 

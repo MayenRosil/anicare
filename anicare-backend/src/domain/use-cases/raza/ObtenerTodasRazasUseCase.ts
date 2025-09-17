@@ -1,5 +1,5 @@
-import { IRazaRepository } from '../interfaces/IRazaRepository';
-import { Raza } from '../entities/Raza';
+import { IRazaRepository } from '../../interfaces/IRazaRepository';
+import { Raza } from '../../entities/Raza';
 
 export class ObtenerTodasRazasUseCase {
   constructor(private razaRepository: IRazaRepository) {}

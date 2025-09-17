@@ -1,7 +1,7 @@
 // src/domain/use-cases/LoginUseCase.ts
-import { IUsuarioRepository } from '../interfaces/IUsuarioRepository';
+import { IUsuarioRepository } from '../../interfaces/IUsuarioRepository';
 import bcrypt from 'bcryptjs';
-import { Usuario } from '../entities/Usuario';
+import { Usuario } from '../../entities/Usuario';
 
 export class LoginUseCase {
   constructor(private usuarioRepository: IUsuarioRepository) {}

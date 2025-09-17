@@ -1,5 +1,5 @@
-import { IPacienteRepository } from '../interfaces/IPacienteRepository';
-import { Paciente } from '../entities/Paciente';
+import { IPacienteRepository } from '../../interfaces/IPacienteRepository';
+import { Paciente } from '../../entities/Paciente';
 
 export class ObtenerPacientePorIdUseCase {
   constructor(private pacienteRepository: IPacienteRepository) {}

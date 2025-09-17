@@ -1,7 +1,7 @@
 // src/application/routes/usuario.routes.ts
 import { Router } from 'express';
 import { RazaController } from '../controllers/RazaController';
-import { verifyToken } from '../middlewares/verifyToken';
+import { verifyToken } from '../middlewares/validarToken';
 
 const router = Router();
 

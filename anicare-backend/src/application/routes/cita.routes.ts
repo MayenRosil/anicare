@@ -1,7 +1,7 @@
 // src/application/routes/cita.routes.ts
 import { Router } from 'express';
 import { CitaController } from '../controllers/CitaController';
-import { verifyToken } from '../middlewares/verifyToken';
+import { verifyToken } from '../middlewares/validarToken';
 
 const router = Router();
 

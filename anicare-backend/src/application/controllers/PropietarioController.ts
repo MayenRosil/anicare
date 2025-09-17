@@ -1,9 +1,9 @@
 // src/application/controllers/PropietarioController.ts
 import { Request, Response } from 'express';
 import { PropietarioRepository } from '../../infrastructure/repositories/PropietarioRepository';
-import { CrearPropietarioUseCase } from '../../domain/use-cases/CrearPropietarioUseCase';
-import { ObtenerTodosPropietariosUseCase } from '../../domain/use-cases/ObtenerTodosPropietariosUseCase';
-import { ObtenerPropietarioPorIdUseCase } from '../../domain/use-cases/ObtenerPropietarioPorIdUseCase';
+import { CrearPropietarioUseCase } from '../../domain/use-cases/propietario/CrearPropietarioUseCase';
+import { ObtenerTodosPropietariosUseCase } from '../../domain/use-cases/propietario/ObtenerTodosPropietariosUseCase';
+import { ObtenerPropietarioPorIdUseCase } from '../../domain/use-cases/propietario/ObtenerPropietarioPorIdUseCase';
 
 export class PropietarioController {
   static async crear(req: Request, res: Response): Promise<void> {

@@ -1,8 +1,8 @@
 // src/application/controllers/AuthController.ts
 import { Request, Response } from 'express';
 import { UsuarioRepository } from '../../infrastructure/repositories/UsuarioRepository';
-import { LoginUseCase } from '../../domain/use-cases/LoginUseCase';
-import generateToken from '../../shared/utils/generateToken';
+import { LoginUseCase } from '../../domain/use-cases/auth/LoginUseCase';
+import generateToken from '../../shared/utils/generarToken';
 
 export class AuthController {
   static async login(req: Request, res: Response) {

@@ -1,5 +1,5 @@
-import { ICitaRepository } from '../interfaces/ICitaRepository';
-import { Cita } from '../entities/Cita';
+import { ICitaRepository } from '../../interfaces/ICitaRepository';
+import { Cita } from '../../entities/Cita';
 
 export class ObtenerTodasCitasUseCase {
   constructor(private citaRepository: ICitaRepository) {}

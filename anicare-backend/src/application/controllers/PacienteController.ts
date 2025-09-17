@@ -1,10 +1,10 @@
 // src/application/controllers/PacienteController.ts
 import { Request, Response } from 'express';
 import { PacienteRepository } from '../../infrastructure/repositories/PacienteRepository';
-import { CrearPacienteUseCase } from '../../domain/use-cases/CrearPacienteUseCase';
-import { ObtenerTodosPacientesUseCase } from '../../domain/use-cases/ObtenerTodosPacientesUseCase';
-import { ObtenerPacientePorIdUseCase } from '../../domain/use-cases/ObtenerPacientePorIdUseCase';
-import { ObtenerPacientesPorPropietarioUseCase } from '../../domain/use-cases/ObtenerPacientesPorPropietarioUseCase';
+import { CrearPacienteUseCase } from '../../domain/use-cases/paciente/CrearPacienteUseCase';
+import { ObtenerTodosPacientesUseCase } from '../../domain/use-cases/paciente/ObtenerTodosPacientesUseCase';
+import { ObtenerPacientePorIdUseCase } from '../../domain/use-cases/paciente/ObtenerPacientePorIdUseCase';
+import { ObtenerPacientesPorPropietarioUseCase } from '../../domain/use-cases/paciente/ObtenerPacientesPorPropietarioUseCase';
 
 export class PacienteController {
   static async crear(req: Request, res: Response): Promise<void> {
