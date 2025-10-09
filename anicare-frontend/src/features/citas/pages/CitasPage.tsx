@@ -9,6 +9,8 @@ import { useEffect, useState } from 'react';
 import axiosInstance from '../../../shared/config/axiosConfig';
 import { obtenerPacientes } from '../services/pacienteService';
 import { obtenerDoctores } from '../services/doctorService';
+import { atenderCitaCompleta } from '../services/citaService';
+
 
 export default function CitasPage() {
   const [eventos, setEventos] = useState<any[]>([]);
@@ -54,25 +56,25 @@ export default function CitasPage() {
   };
 
   useEffect(() => {
-   if(pacientes.length === 0 && doctores.length === 0) cargarOpciones();
+    if (pacientes.length === 0 && doctores.length === 0) cargarOpciones();
   }, []);
 
-   useEffect(() => {
-    if((pacientes.length > 0 && doctores.length > 0) && eventos.length === 0 ) cargarCitas();
+  useEffect(() => {
+    if ((pacientes.length > 0 && doctores.length > 0) && eventos.length === 0) cargarCitas();
   }, [pacientes, doctores]);
 
   const handleDateClick = (arg: DateClickArg) => {
-    
+
     const date = arg.dateStr.split('T')[0]; // "2025-10-08"
-const [year, month, day] = date.split('-');
-const fechaFormateada = [day, month, year].join('-'); // "08-10-2025"
-    
-      const defaultTime = new Date().toLocaleTimeString('es-GT', {
-        timeZone: 'America/Guatemala',
-        hour12: false,
-        hour: '2-digit',
-        minute: '2-digit'
-      });
+    const [year, month, day] = date.split('-');
+    const fechaFormateada = [day, month, year].join('-'); // "08-10-2025"
+
+    const defaultTime = new Date().toLocaleTimeString('es-GT', {
+      timeZone: 'America/Guatemala',
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit'
+    });
     setFechaSeleccionada(fechaFormateada);
     setHora(defaultTime);
     setComentario('');
@@ -104,7 +106,7 @@ const fechaFormateada = [day, month, year].join('-'); // "08-10-2025"
   };
 
   const handleEventClick = (arg: EventClickArg) => {
-   
+
     const props = arg.event.extendedProps;
     setCitaSeleccionada({
       id: arg.event.id,
@@ -117,10 +119,10 @@ const fechaFormateada = [day, month, year].join('-'); // "08-10-2025"
 
     const [fecha, hora] = props.fecha_hora.split('T');
 
-const [year, month, day] = fecha.split('-');
-const fechaFormateada = [day, month, year].join('-'); // "08-10-2025"
+    const [year, month, day] = fecha.split('-');
+    const fechaFormateada = [day, month, year].join('-'); // "08-10-2025"
 
-  
+
 
 
     setFechaSeleccionada(fecha);
@@ -141,17 +143,31 @@ const fechaFormateada = [day, month, year].join('-'); // "08-10-2025"
     }
   };
 
+  const atenderCita = async (cita: number) => {
+    try {
+      const res = await atenderCitaCompleta(cita);
+      alert('Cita atendida correctamente');
+      setModalDetalle(false);
+      cargarCitas();
+      console.log('Consulta creada con ID:', res.idConsulta);
+      // 👇 si después haces la vista de consulta, acá podrás redirigir:
+      // navigate(`/consulta/${res.idConsulta}`);
+    } catch (error: any) {
+      alert(error.response?.data?.mensaje || 'Error al atender la cita');
+    }
+  };
+
   function fixUtcToLocalDisplay(isoString: string): Date {
-  const d = new Date(isoString);
-  return new Date(
-    d.getUTCFullYear(),
-    d.getUTCMonth(),
-    d.getUTCDate(),
-    d.getUTCHours(),
-    d.getUTCMinutes(),
-    d.getUTCSeconds()
-  );
-}
+    const d = new Date(isoString);
+    return new Date(
+      d.getUTCFullYear(),
+      d.getUTCMonth(),
+      d.getUTCDate(),
+      d.getUTCHours(),
+      d.getUTCMinutes(),
+      d.getUTCSeconds()
+    );
+  }
 
   return (
     <div className="container mt-4">
@@ -269,7 +285,8 @@ const fechaFormateada = [day, month, year].join('-'); // "08-10-2025"
                 <button className="btn btn-danger" onClick={() => cambiarEstado(citaSeleccionada.id, 'Cancelada')}>Cancelar cita</button>
                 <div>
                   {/* <button className="btn btn-outline-secondary me-2" disabled>Guardar</button> */}
-                  <button className="btn btn-success" onClick={() => cambiarEstado(citaSeleccionada.id, 'Atendida')}>Atender</button>
+                  <button className="btn btn-success" onClick={() => atenderCita(citaSeleccionada.id)}>Atender</button>
+
                 </div>
               </div>
             </div>
