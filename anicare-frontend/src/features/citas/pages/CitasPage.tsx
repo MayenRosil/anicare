@@ -30,9 +30,9 @@ export default function CitasPage() {
     const res = await axiosInstance.get('/citas');
     const citas = res.data.map((cita: any) => ({
       id: cita.id,
-      title: `${cita.comentario} (${cita.estado})`,
-      start: cita.fecha_hora,
-      end: cita.fecha_hora,
+      title: `${pacientes.filter(p => p.id === cita.id_paciente)[0].nombre} (${cita.estado})`,
+      start: fixUtcToLocalDisplay(cita.fecha_hora),
+      end: fixUtcToLocalDisplay(cita.fecha_hora),
       allDay: false,
       extendedProps: {
         comentario: cita.comentario,
@@ -42,7 +42,9 @@ export default function CitasPage() {
         fecha_hora: cita.fecha_hora
       }
     }));
-    setEventos(citas);
+
+    //Se filtra para no ver las citas con estado Cancelada
+    setEventos(citas.filter((cita: any) => cita.extendedProps.estado !== 'Cancelada'));
   };
 
   const cargarOpciones = async () => {
@@ -52,14 +54,26 @@ export default function CitasPage() {
   };
 
   useEffect(() => {
-    cargarCitas();
-    cargarOpciones();
+   if(pacientes.length === 0 && doctores.length === 0) cargarOpciones();
   }, []);
 
+   useEffect(() => {
+    if((pacientes.length > 0 && doctores.length > 0) && eventos.length === 0 ) cargarCitas();
+  }, [pacientes, doctores]);
+
   const handleDateClick = (arg: DateClickArg) => {
-    const date = arg.dateStr.split('T')[0];
-    const defaultTime = new Date().toISOString().slice(11, 16);
-    setFechaSeleccionada(date);
+    
+    const date = arg.dateStr.split('T')[0]; // "2025-10-08"
+const [year, month, day] = date.split('-');
+const fechaFormateada = [day, month, year].join('-'); // "08-10-2025"
+    
+      const defaultTime = new Date().toLocaleTimeString('es-GT', {
+        timeZone: 'America/Guatemala',
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    setFechaSeleccionada(fechaFormateada);
     setHora(defaultTime);
     setComentario('');
     setIdPaciente('');
@@ -90,6 +104,7 @@ export default function CitasPage() {
   };
 
   const handleEventClick = (arg: EventClickArg) => {
+   
     const props = arg.event.extendedProps;
     setCitaSeleccionada({
       id: arg.event.id,
@@ -101,6 +116,13 @@ export default function CitasPage() {
     });
 
     const [fecha, hora] = props.fecha_hora.split('T');
+
+const [year, month, day] = fecha.split('-');
+const fechaFormateada = [day, month, year].join('-'); // "08-10-2025"
+
+  
+
+
     setFechaSeleccionada(fecha);
     setHora(hora.slice(0, 5));
     setComentario(props.comentario);
@@ -118,6 +140,18 @@ export default function CitasPage() {
       alert('Error al actualizar estado');
     }
   };
+
+  function fixUtcToLocalDisplay(isoString: string): Date {
+  const d = new Date(isoString);
+  return new Date(
+    d.getUTCFullYear(),
+    d.getUTCMonth(),
+    d.getUTCDate(),
+    d.getUTCHours(),
+    d.getUTCMinutes(),
+    d.getUTCSeconds()
+  );
+}
 
   return (
     <div className="container mt-4">
@@ -138,6 +172,7 @@ export default function CitasPage() {
         dateClick={handleDateClick}
         eventClick={handleEventClick}
         height="auto"
+        timeZone="local"
       />
 
       {/* Modal Nueva Cita */}
@@ -200,7 +235,7 @@ export default function CitasPage() {
                 <p><strong>Estado actual:</strong> {citaSeleccionada.estado}</p>
 
                 <div className="mb-3">
-                  <label className="form-label">Fecha</label>
+                  <label className="form-label">Fecha (MM-DD-AAAA)</label>
                   <input type="date" className="form-control" value={fechaSeleccionada!} onChange={(e) => setFechaSeleccionada(e.target.value)} />
                 </div>
 
@@ -233,7 +268,7 @@ export default function CitasPage() {
               <div className="modal-footer justify-content-between">
                 <button className="btn btn-danger" onClick={() => cambiarEstado(citaSeleccionada.id, 'Cancelada')}>Cancelar cita</button>
                 <div>
-                  <button className="btn btn-outline-secondary me-2" disabled>Guardar</button>
+                  {/* <button className="btn btn-outline-secondary me-2" disabled>Guardar</button> */}
                   <button className="btn btn-success" onClick={() => cambiarEstado(citaSeleccionada.id, 'Atendida')}>Atender</button>
                 </div>
               </div>

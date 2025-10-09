@@ -1,4 +1,4 @@
-// src/infrastructure/repositories/PacienteRepository.ts
+
 import { IPacienteRepository } from '../../domain/interfaces/IPacienteRepository';
 import { Paciente } from '../../domain/entities/Paciente';
 import pool from '../../shared/config/db';

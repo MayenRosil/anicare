@@ -76,6 +76,7 @@ CREATE TABLE Caracteristicas_Paciente (
 );
 
 -- Tabla: Doctor
+-- HACER QUE ID Y ID_USUARIO SEA UNA LLAVE COMPUESTA, PERMITE REPETIR REGISTROS
 CREATE TABLE Doctor (
     id INT AUTO_INCREMENT PRIMARY KEY,
     id_usuario INT,
@@ -200,4 +201,4 @@ VALUES (2, 'Ana', 'Maldonado', 'Medicina veterinaria', '1234567890101', '5555666
 
 -- ---------------------------------
 -- SELECTS PARA PRUEBAS
-
+select * from propietario
