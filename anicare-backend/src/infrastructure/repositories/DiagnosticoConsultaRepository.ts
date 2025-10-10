@@ -20,14 +20,38 @@ export class DiagnosticoConsultaRepository implements IDiagnosticoConsultaReposi
     return result.insertId as number;
   }
 
-  async obtenerPorId(id: number): Promise<DiagnosticoConsulta | null> {
-    const [rows]: any = await pool.query('SELECT * FROM DiagnosticoConsulta WHERE id = ?', [id]);
-    if (rows.length === 0) return null;
-    return rows[0];
+async obtenerPorId(id: number): Promise<DiagnosticoConsulta | null> {
+  const [rows]: any = await pool.query("SELECT * FROM DiagnosticoConsulta WHERE id = ?", [id]);
+  return rows.length ? rows[0] : null;
+}
+
+// 👇 NUEVO
+async obtenerPorConsulta(id_consulta: number): Promise<DiagnosticoConsulta[]> {
+  const [rows]: any = await pool.query(
+    "SELECT * FROM DiagnosticoConsulta WHERE id_consulta = ?",
+    [id_consulta]
+  );
+  return rows;
+}
+
+async actualizar(id: number, data: Partial<DiagnosticoConsulta>): Promise<void> {
+  const campos = [];
+  const valores: any[] = [];
+
+  const columnasValidas = ['id_consulta', 'id_diagnostico', 'tipo', 'estado', 'comentarios'];
+
+  for (const [key, value] of Object.entries(data)) {
+    if (!columnasValidas.includes(key)) continue; // 👈 ignora campos que no existen
+    campos.push(`${key} = ?`);
+    valores.push(value);
   }
 
-  async obtenerPorConsulta(id_consulta: number): Promise<DiagnosticoConsulta[]> {
-    const [rows]: any = await pool.query('SELECT * FROM DiagnosticoConsulta WHERE id_consulta = ?', [id_consulta]);
-    return rows;
-  }
+  if (campos.length === 0) return;
+  await pool.query(
+    `UPDATE DiagnosticoConsulta SET ${campos.join(', ')} WHERE id = ?`,
+    [...valores, id]
+  );
+}
+
+
 }

@@ -32,4 +32,18 @@ export class ConsultaRepository implements IConsultaRepository {
     const [rows]: any = await pool.query('SELECT * FROM Consulta');
     return rows;
   }
+
+  async actualizar(id: number, data: Partial<Consulta>): Promise<void> {
+  const campos = [];
+  const valores: any[] = [];
+
+  for (const [key, value] of Object.entries(data)) {
+    campos.push(`${key} = ?`);
+    valores.push(value);
+  }
+
+  if (campos.length === 0) return;
+  await pool.query(`UPDATE Consulta SET ${campos.join(', ')} WHERE id = ?`, [...valores, id]);
+}
+
 }
