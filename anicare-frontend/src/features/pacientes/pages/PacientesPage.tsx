@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { obtenerPacientes, crearPaciente } from '../services/pacienteService';
 import { obtenerRazas } from '../services/razaService';
 import { obtenerPropietarios } from '../services/propietarioService';
+import { useNavigate } from 'react-router-dom'; // 👈 importa el hook
+
 
 interface Paciente {
   id: number;
@@ -14,6 +16,8 @@ interface Paciente {
 }
 
 export default function PacientesPage() {
+    const navigate = useNavigate(); // 👈 inicializa el hook
+
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [razas, setRazas] = useState<any[]>([]);
   const [propietarios, setPropietarios] = useState<any[]>([]);
@@ -103,6 +107,13 @@ export default function PacientesPage() {
                 <td>
                   <button className="btn btn-sm btn-outline-primary me-2">Editar</button>
                   <button className="btn btn-sm btn-outline-danger">Eliminar</button>
+                  <button
+                    className="btn btn-sm btn-outline-info"
+                    onClick={() => navigate(`/paciente/${p.id}/historial`)}
+                  >
+                    Ver Historial Clínico
+                  </button>
+
                 </td>
 
               </tr>

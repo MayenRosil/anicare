@@ -46,4 +46,28 @@ export class ConsultaRepository implements IConsultaRepository {
   await pool.query(`UPDATE Consulta SET ${campos.join(', ')} WHERE id = ?`, [...valores, id]);
 }
 
+  async obtenerPorPaciente(idPaciente: number): Promise<any[]> {
+    const [rows]: any = await pool.query(
+      `
+      SELECT 
+        c.id,
+        c.fecha_hora,
+        c.estado,
+        d.nombre  AS doctor,
+        dg.nombre AS diagnostico
+      FROM Consulta c
+      INNER JOIN Doctor d ON d.id = c.id_doctor
+      LEFT JOIN DiagnosticoConsulta dc 
+        ON dc.id_consulta = c.id
+        AND dc.tipo = 'Principal'
+      LEFT JOIN Diagnostico dg 
+        ON dg.id = dc.id_diagnostico
+      WHERE c.id_paciente = ?
+      ORDER BY c.fecha_hora DESC
+      `,
+      [idPaciente]
+    );
+    return rows;
+  }
+
 }
