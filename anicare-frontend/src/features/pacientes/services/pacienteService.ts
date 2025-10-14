@@ -9,3 +9,14 @@ export const crearPaciente = async (data: any) => {
   const response = await axiosInstance.post('/pacientes', data);
   return response.data;
 };
+
+
+export const obtenerConsultasPorPaciente = async (idPaciente: number) => {
+  try {
+    const res = await axiosInstance.get(`/pacientes/${idPaciente}/consultas`);
+    return res.data;
+  } catch (error: any) {
+    console.error("Error al obtener historial clínico del paciente:", error);
+    throw error;
+  }
+};

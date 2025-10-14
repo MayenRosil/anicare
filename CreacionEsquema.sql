@@ -76,6 +76,7 @@ CREATE TABLE Caracteristicas_Paciente (
 );
 
 -- Tabla: Doctor
+-- HACER QUE ID Y ID_USUARIO SEA UNA LLAVE COMPUESTA, PERMITE REPETIR REGISTROS
 CREATE TABLE Doctor (
     id INT AUTO_INCREMENT PRIMARY KEY,
     id_usuario INT,
@@ -198,6 +199,46 @@ VALUES (1, 'Labrador Retriever', 'Raza amigable y activa');
 INSERT INTO Doctor (id_usuario, nombre, apellido, especialidad, dpi, telefono, correo, activo)
 VALUES (2, 'Ana', 'Maldonado', 'Medicina veterinaria', '1234567890101', '55556666', 'ana@anicare.com', true);
 
+---------------------
+-- ============================================================
+-- Placeholders iniciales para flujo automático de consultas
+-- ============================================================
+
+-- Placeholder para diagnóstico genérico
+INSERT INTO Diagnostico (id, nombre, descripcion)
+VALUES (1, 'Sin diagnóstico', 'Diagnóstico temporal utilizado para consultas automáticas')
+ON DUPLICATE KEY UPDATE nombre = VALUES(nombre);
+
+-- Placeholder para medicamento genérico
+INSERT INTO Medicamento (
+  id,
+  nombre,
+  laboratorio,
+  presentacion,
+  unidad_medida,
+  precio_compra,
+  precio_venta,
+  ganancia_venta,
+  stock_actual,
+  stock_minimo
+)
+VALUES (
+  1,
+  'Sin especificar',
+  'N/A',
+  'N/A',
+  'N/A',
+  0.00,
+  0.00,
+  0.00,
+  0,
+  0
+)
+ON DUPLICATE KEY UPDATE nombre = VALUES(nombre);
+
+
 -- ---------------------------------
 -- SELECTS PARA PRUEBAS
+select * from propietario
+
 

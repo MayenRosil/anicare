@@ -5,6 +5,10 @@ import { CrearCitaUseCase } from '../../domain/use-cases/cita/CrearCitaUseCase';
 import { ObtenerTodasCitasUseCase } from '../../domain/use-cases/cita/ObtenerTodasCitasUseCase';
 import { ObtenerCitaPorIdUseCase } from '../../domain/use-cases/cita/ObtenerCitaPorIdUseCase';
 import { ActualizarEstadoCitaUseCase } from '../../domain/use-cases/cita/ActualizarEstadoCitaUseCase';
+import { AtenderCitaCompletaUseCase } from '../../domain/use-cases/cita/AtenderCitaCompletaUseCase';
+import { ConsultaRepository } from '../../infrastructure/repositories/ConsultaRepository';
+import { DiagnosticoConsultaRepository } from '../../infrastructure/repositories/DiagnosticoConsultaRepository';
+import { TratamientoRepository } from '../../infrastructure/repositories/TratamientoRepository';
 
 export class CitaController {
   static async crear(req: Request, res: Response): Promise<void> {
@@ -60,6 +64,32 @@ export class CitaController {
       res.json({ mensaje: 'Estado actualizado correctamente' });
     } catch (error) {
       res.status(500).json({ mensaje: 'Error al actualizar estado de la cita', error });
+    }
+  }
+
+
+  static async atenderCompleta(req: Request, res: Response): Promise<void> {
+    try {
+      const id = parseInt(req.params.id);
+
+      const useCase = new AtenderCitaCompletaUseCase(
+        new CitaRepository(),
+        new ConsultaRepository(),
+        new DiagnosticoConsultaRepository(),
+        new TratamientoRepository()
+      );
+
+      const idConsulta = await useCase.execute(id);
+
+      res.json({
+        mensaje: 'Cita atendida correctamente. Consulta, diagnóstico y tratamiento creados.',
+        idConsulta
+      });
+    } catch (error) {
+      res.status(500).json({
+        mensaje: 'Error al atender cita',
+        error
+      });
     }
   }
 }

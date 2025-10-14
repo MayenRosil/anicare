@@ -2,6 +2,7 @@
 import { ICitaRepository } from '../../domain/interfaces/ICitaRepository';
 import { Cita } from '../../domain/entities/Cita';
 import pool from '../../shared/config/db';
+import {localStringToDatePreservingTime, toMySQLDateTime} from '../../shared/utils/convertirFechas';
 
 export class CitaRepository implements ICitaRepository {
   async crear(data: Omit<Cita, 'id' | 'estado'>): Promise<Cita> {
@@ -16,9 +17,8 @@ export class CitaRepository implements ICitaRepository {
     const [result]: any = await pool.query(
       `INSERT INTO Cita (id_paciente, id_doctor, id_usuario_registro, fecha_hora, estado, comentario)
        VALUES (?, ?, ?, ?, 'Pendiente', ?)`,
-      [id_paciente, id_doctor, id_usuario_registro, fecha_hora, comentario]
+      [id_paciente, id_doctor, id_usuario_registro, toMySQLDateTime(fecha_hora.toString()), comentario]
     );
-
     return new Cita(
       result.insertId,
       id_paciente,
@@ -38,7 +38,7 @@ export class CitaRepository implements ICitaRepository {
         row.id_paciente,
         row.id_doctor,
         row.id_usuario_registro,
-        row.fecha_hora,
+        localStringToDatePreservingTime(row.fecha_hora),
         row.estado,
         row.comentario
       )
@@ -55,7 +55,7 @@ export class CitaRepository implements ICitaRepository {
       row.id_paciente,
       row.id_doctor,
       row.id_usuario_registro,
-      row.fecha_hora,
+        localStringToDatePreservingTime(row.fecha_hora),
       row.estado,
       row.comentario
     );
@@ -65,3 +65,5 @@ export class CitaRepository implements ICitaRepository {
     await pool.query('UPDATE Cita SET estado = ? WHERE id = ?', [estado, id]);
   }
 }
+
+

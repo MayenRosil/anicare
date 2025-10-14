@@ -1,4 +1,4 @@
-// src/application/controllers/PacienteController.ts
+
 import { Request, Response } from 'express';
 import { PacienteRepository } from '../../infrastructure/repositories/PacienteRepository';
 import { CrearPacienteUseCase } from '../../domain/use-cases/paciente/CrearPacienteUseCase';
