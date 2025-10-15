@@ -154,7 +154,8 @@ CREATE TABLE Medicamento (
     precio_venta DECIMAL(10,2),
     ganancia_venta DECIMAL(10,2),
     stock_actual INT DEFAULT 0,
-    stock_minimo INT DEFAULT 0
+    stock_minimo INT DEFAULT 0,
+    activo BOOLEAN DEFAULT TRUE
 );
 
 -- Tabla: Tratamiento

@@ -6,5 +6,5 @@ export interface IMedicamentoRepository {
   obtenerTodos(): Promise<Medicamento[]>;
   obtenerPorId(id: number): Promise<Medicamento | null>;
   actualizar(id: number, data: Partial<Medicamento>): Promise<void>;
-  eliminar(id: number): Promise<void>;
+  eliminar(id: number): Promise<void>; // Eliminación lógica si es necesario
 }

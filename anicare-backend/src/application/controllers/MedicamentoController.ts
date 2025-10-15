@@ -8,22 +8,23 @@ import { ActualizarMedicamentoUseCase } from '../../domain/use-cases/medicamento
 import { EliminarMedicamentoUseCase } from '../../domain/use-cases/medicamento/EliminarMedicamentoUseCase';
 
 export class MedicamentoController {
+  // Crear medicamento
   static async crear(req: Request, res: Response): Promise<void> {
     try {
       const repo = new MedicamentoRepository();
       const useCase = new CrearMedicamentoUseCase(repo);
-      const id = await useCase.execute(req.body);
-      
+      const idMedicamento = await useCase.execute(req.body);
       res.status(201).json({ 
-        mensaje: 'Medicamento creado correctamente',
-        id 
+        mensaje: 'Medicamento creado exitosamente', 
+        id: idMedicamento 
       });
     } catch (error) {
       res.status(500).json({ mensaje: 'Error al crear medicamento', error });
     }
   }
 
-  static async listar(req: Request, res: Response): Promise<void> {
+  // Listar todos
+  static async listarTodos(req: Request, res: Response): Promise<void> {
     try {
       const repo = new MedicamentoRepository();
       const useCase = new ObtenerTodosMedicamentosUseCase(repo);
@@ -34,6 +35,7 @@ export class MedicamentoController {
     }
   }
 
+  // Obtener por ID
   static async obtenerPorId(req: Request, res: Response): Promise<void> {
     try {
       const id = parseInt(req.params.id);
@@ -52,6 +54,7 @@ export class MedicamentoController {
     }
   }
 
+  // Actualizar
   static async actualizar(req: Request, res: Response): Promise<void> {
     try {
       const id = parseInt(req.params.id);
@@ -64,6 +67,7 @@ export class MedicamentoController {
     }
   }
 
+  // Eliminar
   static async eliminar(req: Request, res: Response): Promise<void> {
     try {
       const id = parseInt(req.params.id);

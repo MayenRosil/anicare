@@ -1,4 +1,3 @@
-// src/domain/use-cases/medicamento/ObtenerMedicamentoPorIdUseCase.ts
 import { IMedicamentoRepository } from '../../interfaces/IMedicamentoRepository';
 import { Medicamento } from '../../entities/Medicamento';
 

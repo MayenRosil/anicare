@@ -10,6 +10,7 @@ export class Medicamento {
     public precio_venta: number | null,
     public ganancia_venta: number | null,
     public stock_actual: number,
-    public stock_minimo: number
+    public stock_minimo: number,
+    public activo?: boolean
   ) {}
 }
