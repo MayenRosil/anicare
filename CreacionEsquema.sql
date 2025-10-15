@@ -55,7 +55,6 @@ CREATE TABLE Paciente (
     id INT AUTO_INCREMENT PRIMARY KEY,
     id_propietario INT,
     id_raza INT,
-    -- agregar id especie
     nombre VARCHAR(100) NOT NULL,
     sexo ENUM('M','F') NOT NULL,
     fecha_nacimiento DATE,
@@ -76,7 +75,6 @@ CREATE TABLE Caracteristicas_Paciente (
 );
 
 -- Tabla: Doctor
--- HACER QUE ID Y ID_USUARIO SEA UNA LLAVE COMPUESTA, PERMITE REPETIR REGISTROS
 CREATE TABLE Doctor (
     id INT AUTO_INCREMENT PRIMARY KEY,
     id_usuario INT,
@@ -104,7 +102,7 @@ CREATE TABLE Cita (
     FOREIGN KEY (id_usuario_registro) REFERENCES Usuario(id)
 );
 
--- Tabla: Consulta
+-- Tabla: Consulta (✨ ACTUALIZADA con signos vitales)
 CREATE TABLE Consulta (
     id INT AUTO_INCREMENT PRIMARY KEY,
     id_paciente INT,
@@ -114,6 +112,12 @@ CREATE TABLE Consulta (
     fecha_hora DATETIME NOT NULL,
     estado ENUM('Abierta', 'Finalizada', 'Cancelada') DEFAULT 'Abierta',
     notas_adicionales TEXT,
+    -- ✨ NUEVOS CAMPOS - Signos vitales y examen previo
+    motivo_consulta TEXT,
+    peso DECIMAL(5,2),
+    temperatura DECIMAL(4,2),
+    frecuencia_cardiaca INT,
+    frecuencia_respiratoria INT,
     FOREIGN KEY (id_paciente) REFERENCES Paciente(id),
     FOREIGN KEY (id_doctor) REFERENCES Doctor(id),
     FOREIGN KEY (id_usuario_registro) REFERENCES Usuario(id),
@@ -193,16 +197,20 @@ VALUES ('ana', 'ana@anicare.com', '$2b$10$7iXS3eP9eJMNooR.T9KWBuz53nsJCpyLViTT9c
 INSERT INTO Especie (nombre, descripcion)
 VALUES ('Perro', 'Mamífero doméstico común');
 
+INSERT INTO Especie (nombre, descripcion)
+VALUES ('Gato', 'Mamífero doméstico común');
+
 INSERT INTO Raza (id_especie, nombre, descripcion)
 VALUES (1, 'Labrador Retriever', 'Raza amigable y activa');
 
+INSERT INTO Raza (id_especie, nombre, descripcion)
+VALUES (1, 'Pastor Alemán', 'Raza inteligente y leal');
+
+INSERT INTO Raza (id_especie, nombre, descripcion)
+VALUES (2, 'Persa', 'Gato de pelo largo');
+
 INSERT INTO Doctor (id_usuario, nombre, apellido, especialidad, dpi, telefono, correo, activo)
 VALUES (2, 'Ana', 'Maldonado', 'Medicina veterinaria', '1234567890101', '55556666', 'ana@anicare.com', true);
-
----------------------
--- ============================================================
--- Placeholders iniciales para flujo automático de consultas
--- ============================================================
 
 -- Placeholder para diagnóstico genérico
 INSERT INTO Diagnostico (id, nombre, descripcion)
@@ -236,9 +244,29 @@ VALUES (
 )
 ON DUPLICATE KEY UPDATE nombre = VALUES(nombre);
 
+-- ✨ Medicamentos de ejemplo
+INSERT INTO Medicamento (nombre, laboratorio, presentacion, unidad_medida, precio_compra, precio_venta, ganancia_venta, stock_actual, stock_minimo)
+VALUES 
+('Amoxicilina', 'Bayer', 'Tabletas 500mg', 'Tableta', 2.50, 5.00, 2.50, 100, 20),
+('Meloxicam', 'Boehringer', 'Inyectable 5mg/ml', 'ml', 15.00, 25.00, 10.00, 50, 10),
+('Dexametasona', 'Pfizer', 'Inyectable 4mg/ml', 'ml', 8.00, 15.00, 7.00, 75, 15),
+('Omeprazol', 'Laboratorios Unidos', 'Cápsulas 20mg', 'Cápsula', 1.50, 3.50, 2.00, 200, 30),
+('Ivermectina', 'MSD', 'Solución oral 1%', 'ml', 12.00, 22.00, 10.00, 60, 10),
+('Metronidazol', 'Bayer', 'Tabletas 250mg', 'Tableta', 1.80, 4.00, 2.20, 150, 25);
+
+
+-- Datos de ejemplo para pruebas
+INSERT INTO Propietario (nombre, apellido, dpi, nit, direccion, telefono, correo)
+VALUES ('Juan', 'Pérez', '1234567890101', '12345678', 'Zona 10, Guatemala', '12345678', 'juan@example.com');
+
+INSERT INTO Paciente (id_propietario, id_raza, nombre, sexo, fecha_nacimiento, color)
+VALUES (1, 1, 'Fido', 'M', '2020-01-15', 'Dorado');
 
 -- ---------------------------------
 -- SELECTS PARA PRUEBAS
-select * from propietario
-
-
+SELECT 'Base de datos creada exitosamente!' AS Mensaje;
+SELECT * FROM Rol;
+SELECT * FROM Usuario;
+SELECT * FROM Doctor;
+SELECT * FROM Especie;
+SELECT * FROM Raza;

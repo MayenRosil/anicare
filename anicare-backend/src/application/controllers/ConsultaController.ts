@@ -1,3 +1,4 @@
+// src/application/controllers/ConsultaController.ts
 import { Request, Response } from 'express';
 import { ConsultaRepository } from '../../infrastructure/repositories/ConsultaRepository';
 import { ObtenerConsultaPorIdUseCase } from '../../domain/use-cases/consulta/ObtenerConsultaPorIdUseCase';
@@ -21,7 +22,25 @@ export class ConsultaController {
     }
   }
 
-    static async actualizar(req: Request, res: Response): Promise<void> {
+  // ✨ NUEVO: Obtener consulta completa con toda la información
+  static async obtenerConsultaCompleta(req: Request, res: Response): Promise<void> {
+    try {
+      const id = parseInt(req.params.id);
+      const repo = new ConsultaRepository();
+      const consulta = await repo.obtenerConsultaCompleta(id);
+      
+      if (!consulta) {
+        res.status(404).json({ mensaje: 'Consulta no encontrada' });
+        return;
+      }
+      
+      res.json(consulta);
+    } catch (error) {
+      res.status(500).json({ mensaje: 'Error al obtener consulta completa', error });
+    }
+  }
+
+  static async actualizar(req: Request, res: Response): Promise<void> {
     try {
       const id = parseInt(req.params.id);
       const repo = new ConsultaRepository();
@@ -33,8 +52,19 @@ export class ConsultaController {
     }
   }
 
+  // ✨ NUEVO: Finalizar consulta
+  static async finalizarConsulta(req: Request, res: Response): Promise<void> {
+    try {
+      const id = parseInt(req.params.id);
+      const repo = new ConsultaRepository();
+      await repo.finalizarConsulta(id);
+      res.json({ mensaje: 'Consulta finalizada correctamente' });
+    } catch (error) {
+      res.status(500).json({ mensaje: 'Error al finalizar consulta', error });
+    }
+  }
 
-    static async listarPorPaciente(req: Request, res: Response): Promise<void> {
+  static async listarPorPaciente(req: Request, res: Response): Promise<void> {
     try {
       const idPaciente = parseInt(req.params.id);
       const useCase = new ObtenerConsultasPorPacienteUseCase(new ConsultaRepository());

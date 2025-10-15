@@ -1,9 +1,9 @@
+// src/domain/use-cases/cita/AtenderCitaCompletaUseCase.ts
 import { ICitaRepository } from '../../interfaces/ICitaRepository';
 import { IConsultaRepository } from '../../interfaces/IConsultaRepository';
 import { IDiagnosticoConsultaRepository } from '../../interfaces/IDiagnosticoConsultaRepository';
 import { ITratamientoRepository } from '../../interfaces/ITratamientoRepository';
 
-// IDs placeholder ya existentes en la base de datos
 const DIAGNOSTICO_POR_DEFECTO_ID = 1; // "Sin diagnóstico"
 const MEDICAMENTO_POR_DEFECTO_ID = 1; // "Sin especificar"
 
@@ -18,7 +18,7 @@ export class AtenderCitaCompletaUseCase {
   /**
    * Al atender una cita:
    * 1️⃣ Marca la cita como 'Atendida'
-   * 2️⃣ Crea una consulta vinculada a esa cita
+   * 2️⃣ Crea una consulta vinculada a esa cita (con signos vitales vacíos)
    * 3️⃣ Crea un diagnóstico vacío vinculado a la consulta
    * 4️⃣ Crea un tratamiento vacío vinculado al diagnóstico
    * Retorna el id de la nueva consulta
@@ -31,7 +31,7 @@ export class AtenderCitaCompletaUseCase {
     // 2️⃣ Cambiar estado a 'Atendida'
     await this.citaRepository.actualizarEstado(idCita, 'Atendida');
 
-    // 3️⃣ Crear la consulta
+    // 3️⃣ Crear la consulta con los nuevos campos
     const idConsulta = await this.consultaRepository.crear({
       id_paciente: cita.id_paciente,
       id_doctor: cita.id_doctor,
@@ -39,7 +39,12 @@ export class AtenderCitaCompletaUseCase {
       id_cita: cita.id,
       fecha_hora: new Date(),
       estado: 'Abierta',
-      notas_adicionales: ''
+      motivo_consulta: cita.comentario || '', // ✨ Usar el comentario de la cita como motivo
+      peso: null,
+      temperatura: null,
+      frecuencia_cardiaca: null,
+      frecuencia_respiratoria: null,
+      notas_adicionales: null
     });
 
     // 4️⃣ Crear diagnóstico vinculado a la nueva consulta

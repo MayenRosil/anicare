@@ -143,19 +143,21 @@ export default function CitasPage() {
     }
   };
 
-  const atenderCita = async (cita: number) => {
-    try {
-      const res = await atenderCitaCompleta(cita);
-      alert('Cita atendida correctamente');
-      setModalDetalle(false);
-      cargarCitas();
-      console.log('Consulta creada con ID:', res.idConsulta);
-      // 👇 si después haces la vista de consulta, acá podrás redirigir:
-      // navigate(`/consulta/${res.idConsulta}`);
-    } catch (error: any) {
-      alert(error.response?.data?.mensaje || 'Error al atender la cita');
+const atenderCita = async (idCita: number) => {
+  try {
+    const res = await atenderCitaCompleta(idCita);
+    setModalDetalle(false);
+    cargarCitas();
+    
+    // ✨ NUEVO: Redirigir directamente a la consulta creada
+    if (res.idConsulta) {
+      alert('Cita atendida. Redirigiendo a la consulta...');
+      window.location.href = `/consulta/${res.idConsulta}`;
     }
-  };
+  } catch (error: any) {
+    alert(error.response?.data?.mensaje || 'Error al atender la cita');
+  }
+};
 
   function fixUtcToLocalDisplay(isoString: string): Date {
     const d = new Date(isoString);
