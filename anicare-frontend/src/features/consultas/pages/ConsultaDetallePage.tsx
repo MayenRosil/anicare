@@ -245,18 +245,123 @@ const guardarCambios = async () => {
   }
 };
 
-  const handleFinalizarConsulta = async () => {
-    if (!confirm('¿Está seguro de finalizar esta consulta? No podrá editarla después.')) return;
+// 🔧 FUNCIÓN COMPLETA Y OPTIMIZADA para ConsultaDetallePage.tsx
+// Reemplaza tu función handleFinalizarConsulta actual con esta:
 
-    try {
-      await finalizarConsulta(Number(idConsulta));
-      alert('Consulta finalizada correctamente');
-      navigate(`/paciente/${consultaCompleta.id_paciente}/historial`);
-    } catch (error) {
-      alert('Error al finalizar la consulta');
-      console.error(error);
+const handleFinalizarConsulta = async () => {
+  if (!confirm('¿Está seguro de finalizar esta consulta? Primero se guardarán todos los cambios. Esta acción no se puede deshacer.')) {
+    return;
+  }
+
+  if (!consultaCompleta) {
+    alert('No se puede finalizar una consulta sin datos');
+    return;
+  }
+
+  try {
+    setSaving(true);
+
+    console.log('💾 Paso 1/4: Guardando datos de la consulta...');
+    // 1. Guardar datos básicos de consulta (signos vitales, motivo, etc.)
+    await actualizarConsulta(Number(idConsulta), {
+      motivo_consulta: consultaCompleta.motivo_consulta,
+      peso: consultaCompleta.peso,
+      temperatura: consultaCompleta.temperatura,
+      frecuencia_cardiaca: consultaCompleta.frecuencia_cardiaca,
+      frecuencia_respiratoria: consultaCompleta.frecuencia_respiratoria,
+      notas_adicionales: consultaCompleta.notas_adicionales
+    });
+
+    console.log('💾 Paso 2/4: Guardando diagnósticos...');
+    // 2. Guardar todos los diagnósticos y sus tratamientos
+    for (let i = 0; i < diagnosticos.length; i++) {
+      const diag = diagnosticos[i];
+      
+      if (diag.id) {
+        // Actualizar diagnóstico existente
+        await actualizarDiagnostico(diag.id, {
+          comentarios: diag.comentarios,
+          tipo: diag.tipo,
+          estado: diag.estado
+        });
+
+        // Guardar tratamientos del diagnóstico
+        for (let j = 0; j < diag.tratamientos.length; j++) {
+          const trat = diag.tratamientos[j];
+          
+          if (trat.id) {
+            // Actualizar tratamiento existente
+            await actualizarTratamiento(trat.id, {
+              id_medicamento: trat.id_medicamento,
+              dosis: trat.dosis,
+              frecuencia: trat.frecuencia,
+              duracion: trat.duracion,
+              instrucciones: trat.instrucciones
+            });
+          } else {
+            // Crear nuevo tratamiento
+            await axiosInstance.post('/tratamientos', {
+              id_diagnostico_consulta: diag.id,
+              id_medicamento: trat.id_medicamento,
+              dosis: trat.dosis,
+              frecuencia: trat.frecuencia,
+              duracion: trat.duracion,
+              instrucciones: trat.instrucciones
+            });
+          }
+        }
+      } else {
+        // Crear nuevo diagnóstico
+        const resDiag = await axiosInstance.post('/diagnosticos', {
+          id_consulta: Number(idConsulta),
+          id_diagnostico: 1,
+          tipo: diag.tipo,
+          estado: diag.estado,
+          comentarios: diag.comentarios
+        });
+        
+        // Crear tratamientos del nuevo diagnóstico
+        for (let j = 0; j < diag.tratamientos.length; j++) {
+          const trat = diag.tratamientos[j];
+          await axiosInstance.post('/tratamientos', {
+            id_diagnostico_consulta: resDiag.data.id,
+            id_medicamento: trat.id_medicamento,
+            dosis: trat.dosis,
+            frecuencia: trat.frecuencia,
+            duracion: trat.duracion,
+            instrucciones: trat.instrucciones
+          });
+        }
+      }
     }
-  };
+
+    console.log('✅ Paso 3/4: Finalizando consulta (cambiando estado)...');
+    // 3. Cambiar estado de consulta a 'Finalizada'
+    await finalizarConsulta(Number(idConsulta));
+
+    console.log('✅ Paso 4/4: Redirigiendo al historial...');
+    alert('✅ Consulta guardada y finalizada correctamente');
+    navigate(`/paciente/${consultaCompleta.id_paciente}/historial`);
+    
+  } catch (error) {
+    console.error('❌ Error al finalizar la consulta:', error);
+    alert('❌ Error al finalizar la consulta. Por favor intente nuevamente.');
+  } finally {
+    setSaving(false);
+  }
+};
+
+/* 
+📝 RESUMEN DE CAMBIOS:
+✅ Guarda TODOS los datos antes de finalizar
+✅ Maneja diagnósticos nuevos y existentes
+✅ Maneja tratamientos nuevos y existentes
+✅ Cambia el estado a 'Finalizada' al final
+✅ Redirige al historial del paciente
+✅ Manejo completo de errores
+✅ Estados de carga (setSaving)
+✅ Logs para debugging
+*/
 
   if (loading) return <p className="p-4">Cargando información de la consulta...</p>;
   if (!consultaCompleta) return <p className="p-4">No se encontró la consulta</p>;

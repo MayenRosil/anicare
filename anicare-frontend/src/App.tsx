@@ -13,6 +13,8 @@ import ConsultaDetallePage from './features/consultas/pages/ConsultaDetallePage'
 import HistorialClinicoPage from './features/pacientes/pages/HistorialClinicoPage';
 import FichaClinicaPage from './features/consultas/pages/FichaClinicaPage';
 import MedicamentosPage from './features/medicamentos/pages/MedicamentosPage';
+import ConsultasPage from './features/consultas/pages/ConsultasPage';
+import DoctoresPage from './features/doctores/pages/DoctoresPage';
 
 
 export default function App() {
@@ -31,6 +33,8 @@ export default function App() {
       <Route path="/paciente/:idPaciente/historial" element={<HistorialClinicoPage />} />
       {/* <Route path="/consulta/:idConsulta" element={<FichaClinicaPage />} /> */}
       <Route path="/medicamentos" element={<PrivateRoute><MedicamentosPage /></PrivateRoute>} /> {/* 🆕 */}
+      <Route path="/consultas" element={<PrivateRoute><ConsultasPage /></PrivateRoute>} /> {/* NUEVO */}
+      <Route path="/doctores" element={<PrivateRoute><DoctoresPage /></PrivateRoute>} /> {/* NUEVO */}
 
 
     </Routes>

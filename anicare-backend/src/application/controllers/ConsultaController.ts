@@ -4,6 +4,7 @@ import { ConsultaRepository } from '../../infrastructure/repositories/ConsultaRe
 import { ObtenerConsultaPorIdUseCase } from '../../domain/use-cases/consulta/ObtenerConsultaPorIdUseCase';
 import { ActualizarConsultaUseCase } from '../../domain/use-cases/consulta/ActualizarConsultaUseCase';
 import { ObtenerConsultasPorPacienteUseCase } from '../../domain/use-cases/consulta/ObtenerConsultasPorPacienteUseCase';
+import { ObtenerTodasConsultasUseCase } from '../../domain/use-cases/consulta/ObtenerTodasConsultasUseCase';
 
 export class ConsultaController {
   static async obtenerPorId(req: Request, res: Response): Promise<void> {
@@ -74,4 +75,17 @@ export class ConsultaController {
       res.status(500).json({ mensaje: 'Error al obtener historial clínico del paciente', error });
     }
   }
+
+  static async listarTodas(req: Request, res: Response): Promise<void> {
+    try {
+      const repo = new ConsultaRepository();
+      const consultas = await repo.obtenerTodas();
+      res.json(consultas);
+    } catch (error) {
+      console.error('Error en listarTodas:', error);
+      res.status(500).json({ mensaje: 'Error al obtener consultas', error });
+    }
+  }
+  
 }
+

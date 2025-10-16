@@ -22,3 +22,13 @@ export const finalizarConsulta = async (id: number) => {
   const res = await axiosInstance.patch(`/consultas/${id}/finalizar`);
   return res.data;
 };
+
+export const obtenerConsultasPorPaciente = async (idPaciente: number) => {
+  const response = await axiosInstance.get(`/pacientes/${idPaciente}/consultas`);
+  return response.data;
+};
+
+export const obtenerTodasConsultas = async () => {
+  const response = await axiosInstance.get('/consultas/todas');
+  return response.data;
+};

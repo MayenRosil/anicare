@@ -2,6 +2,7 @@
 import pool from '../../shared/config/db';
 import { IConsultaRepository } from '../../domain/interfaces/IConsultaRepository';
 import { Consulta } from '../../domain/entities/Consulta';
+import { RowDataPacket } from 'mysql2';
 
 export class ConsultaRepository implements IConsultaRepository {
   async crear(data: Omit<Consulta, 'id'>): Promise<number> {
@@ -67,8 +68,29 @@ export class ConsultaRepository implements IConsultaRepository {
     return rows.length > 0 ? rows[0] : null;
   }
 
-  async obtenerTodas(): Promise<Consulta[]> {
-    const [rows]: any = await pool.query('SELECT * FROM Consulta');
+  
+    async obtenerTodas(): Promise<any[]> {
+    const [rows]: any = await pool.query(`
+      SELECT 
+        c.id,
+        c.id_paciente,
+        c.id_doctor,
+        c.fecha_hora,
+        c.estado,
+        c.notas_adicionales,
+        p.nombre AS nombre_paciente,
+        CONCAT(d.nombre, ' ', d.apellido) AS nombre_doctor,
+        dg.nombre AS diagnostico
+      FROM Consulta c
+      LEFT JOIN Paciente p ON p.id = c.id_paciente
+      LEFT JOIN Doctor d ON d.id = c.id_doctor
+      LEFT JOIN DiagnosticoConsulta dc 
+        ON dc.id_consulta = c.id 
+        AND dc.tipo = 'Principal'
+      LEFT JOIN Diagnostico dg 
+        ON dg.id = dc.id_diagnostico
+      ORDER BY c.fecha_hora DESC
+    `);
     return rows;
   }
 
@@ -93,25 +115,51 @@ export class ConsultaRepository implements IConsultaRepository {
     );
   }
 
-  async obtenerPorPaciente(idPaciente: number): Promise<any[]> {
-    const [rows]: any = await pool.query(
-      `SELECT 
+  async obtenerPorPaciente(idPaciente: number): Promise<Consulta[]> {
+    const query = `
+      SELECT 
         c.id,
+        c.id_paciente,
+        c.id_doctor,
+        COALESCE(CONCAT(d.nombre, ' ', d.apellido), 'Sin asignar') as nombre_doctor,
         c.fecha_hora,
         c.estado,
-        c.motivo_consulta,
-        d.nombre AS doctor_nombre,
-        d.apellido AS doctor_apellido,
-        GROUP_CONCAT(DISTINCT diag.nombre SEPARATOR ', ') AS diagnosticos
+        c.notas_adicionales
       FROM Consulta c
-      INNER JOIN Doctor d ON d.id = c.id_doctor
-      LEFT JOIN DiagnosticoConsulta dc ON dc.id_consulta = c.id
-      LEFT JOIN Diagnostico diag ON diag.id = dc.id_diagnostico
+      LEFT JOIN Doctor d ON c.id_doctor = d.id
       WHERE c.id_paciente = ?
-      GROUP BY c.id, c.fecha_hora, c.estado, c.motivo_consulta, d.nombre, d.apellido
-      ORDER BY c.fecha_hora DESC`,
-      [idPaciente]
-    );
-    return rows;
+      ORDER BY c.fecha_hora DESC
+    `;
+    
+    try {
+      const [rows] = await pool.query<RowDataPacket[]>(query, [idPaciente]);
+      
+      // Para cada consulta, obtener su diagnóstico
+      const consultasConDiagnostico = await Promise.all(
+        (rows as Consulta[]).map(async (consulta) => {
+          const [diagRows] = await pool.query<RowDataPacket[]>(
+            `SELECT diag.nombre as diagnostico
+             FROM DiagnosticoConsulta dc
+             LEFT JOIN Diagnostico diag ON dc.id_diagnostico = diag.id
+             WHERE dc.id_consulta = ?
+             LIMIT 1`,
+            [consulta.id]
+          );
+          
+          return {
+            ...consulta,
+            diagnostico: diagRows.length > 0 ? diagRows[0].diagnostico : null
+          };
+        })
+      );
+      
+      return consultasConDiagnostico;
+    } catch (error) {
+      console.error('Error en obtenerPorPaciente:', error);
+      throw error;
+    }
   }
+
+
+  
 }

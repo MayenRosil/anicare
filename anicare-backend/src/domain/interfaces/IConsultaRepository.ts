@@ -5,7 +5,7 @@ export interface IConsultaRepository {
   crear(data: Omit<Consulta, "id">): Promise<number>;
   obtenerPorId(id: number): Promise<Consulta | null>;
   obtenerConsultaCompleta(id: number): Promise<any>; // ✨ NUEVO
-  obtenerTodas(): Promise<Consulta[]>;
+  obtenerTodas(): Promise<Consulta[]>; // NUEVO
   actualizar(id: number, data: Partial<Consulta>): Promise<void>;
   finalizarConsulta(id: number): Promise<void>; // ✨ NUEVO
   obtenerPorPaciente(idPaciente: number): Promise<any[]>;
