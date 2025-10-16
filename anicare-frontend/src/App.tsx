@@ -15,6 +15,8 @@ import FichaClinicaPage from './features/consultas/pages/FichaClinicaPage';
 import MedicamentosPage from './features/medicamentos/pages/MedicamentosPage';
 import ConsultasPage from './features/consultas/pages/ConsultasPage';
 import DoctoresPage from './features/doctores/pages/DoctoresPage';
+import EspeciesPage from './features/especies/pages/EspeciesPage';
+import RazasPage from './features/razas/pages/RazasPage';
 
 
 export default function App() {
@@ -35,6 +37,9 @@ export default function App() {
       <Route path="/medicamentos" element={<PrivateRoute><MedicamentosPage /></PrivateRoute>} /> {/* 🆕 */}
       <Route path="/consultas" element={<PrivateRoute><ConsultasPage /></PrivateRoute>} /> {/* NUEVO */}
       <Route path="/doctores" element={<PrivateRoute><DoctoresPage /></PrivateRoute>} /> {/* NUEVO */}
+
+      <Route path="/especies" element={<PrivateRoute><EspeciesPage /></PrivateRoute>} /> {/* ✨ NUEVO */}
+      <Route path="/razas" element={<PrivateRoute><RazasPage /></PrivateRoute>} /> {/* ✨ NUEVO */}
 
 
     </Routes>

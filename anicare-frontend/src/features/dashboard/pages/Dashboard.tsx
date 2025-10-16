@@ -1,3 +1,4 @@
+// anicare-frontend/src/features/dashboard/pages/Dashboard.tsx
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/context/AuthContext';
 import { useEffect, useState } from 'react';
@@ -7,7 +8,6 @@ export default function Dashboard() {
   const { usuario, logout } = useAuth();
   const navigate = useNavigate();
 
-  // Estados para estadísticas
   const [estadisticas, setEstadisticas] = useState({
     citasHoy: 0,
     consultasRealizadas: 0,
@@ -24,7 +24,6 @@ export default function Dashboard() {
     try {
       setCargandoEstadisticas(true);
       
-      // Obtener todas las estadísticas en paralelo
       const [citasRes, consultasRes, pacientesRes] = await Promise.all([
         axiosInstance.get('/citas'),
         axiosInstance.get('/consultas/todas'),
@@ -35,32 +34,23 @@ export default function Dashboard() {
       const consultas = consultasRes.data;
       const pacientes = pacientesRes.data;
 
-      // Obtener fecha de hoy en Guatemala (zona horaria local)
       const ahora = new Date();
       const año = ahora.getFullYear();
       const mes = String(ahora.getMonth() + 1).padStart(2, '0');
       const dia = String(ahora.getDate()).padStart(2, '0');
       const hoy = `${año}-${mes}-${dia}`;
 
-      console.log('Fecha hoy:', hoy); // Debug
-
-      // Calcular citas de hoy
       const citasHoy = citas.filter((cita: any) => {
-        const fechaCita = cita.fecha_hora.split('T')[0]; // "2025-10-15"
-        console.log('Comparando:', fechaCita, 'con', hoy); // Debug
+        const fechaCita = cita.fecha_hora.split('T')[0];
         return fechaCita === hoy;
       }).length;
 
-      // Calcular consultas realizadas hoy
       const consultasHoy = consultas.filter((consulta: any) => {
         const fechaConsulta = consulta.fecha_hora.split('T')[0];
         return fechaConsulta === hoy && consulta.estado === 'Finalizada';
       }).length;
 
-      // Calcular citas pendientes
       const citasPendientes = citas.filter((cita: any) => cita.estado === 'Pendiente').length;
-
-      console.log('Estadísticas:', { citasHoy, consultasHoy, citasPendientes }); // Debug
 
       setEstadisticas({
         citasHoy,
@@ -76,49 +66,145 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="container mt-5">
+    <div className="container mt-4">
+      {/* Header */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h2 className="text-primary">Panel de Control - AniCare</h2>
-          <p className="text-muted">Bienvenido <strong>{usuario?.nombre}</strong></p>
+          <h2 className="text-primary">
+            <i className="bi bi-speedometer2 me-2"></i>
+            Dashboard - AniCare
+          </h2>
+          <p className="text-muted mb-0">
+            Bienvenido, <strong>{usuario?.nombre}</strong>
+          </p>
         </div>
-        <button className="btn btn-outline-danger btn-sm" onClick={logout}>
-          Cerrar sesión
+        <button className="btn btn-outline-danger" onClick={logout}>
+          <i className="bi bi-box-arrow-right me-2"></i>
+          Cerrar Sesión
         </button>
       </div>
 
-      <div className="row g-4">
-        {/* Propietarios */}
+      {/* Estadísticas del día */}
+      <div className="row mb-5">
+        <div className="col-12">
+          <div className="card border-0 shadow-sm">
+            <div className="card-body">
+              <h5 className="card-title text-primary mb-4">
+                <i className="bi bi-graph-up me-2"></i>
+                Resumen del día
+              </h5>
+              {cargandoEstadisticas ? (
+                <div className="text-center">
+                  <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Cargando...</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="row g-3">
+                  <div className="col-md-3">
+                    <div className="d-flex align-items-center p-3 bg-primary bg-opacity-10 rounded">
+                      <div className="me-3">
+                        <i className="bi bi-calendar-check-fill fs-2 text-primary"></i>
+                      </div>
+                      <div>
+                        <h3 className="mb-0">{estadisticas.citasHoy}</h3>
+                        <small className="text-muted">Citas hoy</small>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="col-md-3">
+                    <div className="d-flex align-items-center p-3 bg-success bg-opacity-10 rounded">
+                      <div className="me-3">
+                        <i className="bi bi-clipboard2-pulse-fill fs-2 text-success"></i>
+                      </div>
+                      <div>
+                        <h3 className="mb-0">{estadisticas.consultasRealizadas}</h3>
+                        <small className="text-muted">Consultas realizadas</small>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="col-md-3">
+                    <div className="d-flex align-items-center p-3 bg-warning bg-opacity-10 rounded">
+                      <div className="me-3">
+                        <i className="bi bi-hourglass-split fs-2 text-warning"></i>
+                      </div>
+                      <div>
+                        <h3 className="mb-0">{estadisticas.citasPendientes}</h3>
+                        <small className="text-muted">Citas pendientes</small>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="col-md-3">
+                    <div className="d-flex align-items-center p-3 bg-info bg-opacity-10 rounded">
+                      <div className="me-3">
+                        <i className="bi bi-heart-pulse-fill fs-2 text-info"></i>
+                      </div>
+                      <div>
+                        <h3 className="mb-0">{estadisticas.totalPacientes}</h3>
+                        <small className="text-muted">Total pacientes</small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Módulos principales */}
+      <div className="row g-4 mb-4">
+        // Continuación de Dashboard.tsx - Módulos principales
+
+        {/* Pacientes */}
         <div className="col-md-4">
-          <div className="card h-100 border-primary shadow-sm">
+          <div className="card h-100 border-info shadow-sm">
             <div className="card-body">
               <div className="d-flex align-items-center mb-3">
-                <div className="bg-primary text-white rounded-circle p-3 me-3">
-                  <i className="bi bi-person-fill fs-4"></i>
+                <div className="bg-info text-white rounded-circle p-3 me-3">
+                  <i className="bi bi-heart-pulse-fill fs-4"></i>
                 </div>
-                <h5 className="card-title text-primary mb-0">Propietarios</h5>
+                <h5 className="card-title text-info mb-0">Pacientes</h5>
               </div>
-              <p className="card-text text-muted">Administrar dueños de pacientes</p>
-              <button className="btn btn-primary w-100" onClick={() => navigate('/propietarios')}>
+              <p className="card-text text-muted">Gestión de pacientes y expedientes médicos</p>
+              <button className="btn btn-info w-100" onClick={() => navigate('/pacientes')}>
+                Ir a Pacientes
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Propietarios */}
+        <div className="col-md-4">
+          <div className="card h-100 border-success shadow-sm">
+            <div className="card-body">
+              <div className="d-flex align-items-center mb-3">
+                <div className="bg-success text-white rounded-circle p-3 me-3">
+                  <i className="bi bi-people-fill fs-4"></i>
+                </div>
+                <h5 className="card-title text-success mb-0">Propietarios</h5>
+              </div>
+              <p className="card-text text-muted">Gestión de datos de propietarios</p>
+              <button className="btn btn-success w-100" onClick={() => navigate('/propietarios')}>
                 Ir a Propietarios
               </button>
             </div>
           </div>
         </div>
 
-        {/* Pacientes */}
+        {/* Citas */}
         <div className="col-md-4">
-          <div className="card h-100 border-success shadow-sm">
+          <div className="card h-100 border-primary shadow-sm">
             <div className="card-body">
               <div className="d-flex align-items-center mb-3">
-                <div className="bg-success text-white rounded-circle p-3 me-3">
-                  <i className="bi bi-heart-pulse-fill fs-4"></i>
+                <div className="bg-primary text-white rounded-circle p-3 me-3">
+                  <i className="bi bi-calendar-event-fill fs-4"></i>
                 </div>
-                <h5 className="card-title text-success mb-0">Pacientes</h5>
+                <h5 className="card-title text-primary mb-0">Citas</h5>
               </div>
-              <p className="card-text text-muted">Gestionar información de las mascotas</p>
-              <button className="btn btn-success w-100" onClick={() => navigate('/pacientes')}>
-                Ir a Pacientes
+              <p className="card-text text-muted">Calendario y programación de citas</p>
+              <button className="btn btn-primary w-100" onClick={() => navigate('/citas')}>
+                Ir a Citas
               </button>
             </div>
           </div>
@@ -129,32 +215,14 @@ export default function Dashboard() {
           <div className="card h-100 border-warning shadow-sm">
             <div className="card-body">
               <div className="d-flex align-items-center mb-3">
-                <div className="bg-warning text-dark rounded-circle p-3 me-3">
+                <div className="bg-warning text-white rounded-circle p-3 me-3">
                   <i className="bi bi-person-badge-fill fs-4"></i>
                 </div>
                 <h5 className="card-title text-warning mb-0">Doctores</h5>
               </div>
-              <p className="card-text text-muted">Gestionar veterinarios de la clínica</p>
+              <p className="card-text text-muted">Gestión de personal médico</p>
               <button className="btn btn-warning w-100" onClick={() => navigate('/doctores')}>
                 Ir a Doctores
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Citas */}
-        <div className="col-md-4">
-          <div className="card h-100 border-info shadow-sm">
-            <div className="card-body">
-              <div className="d-flex align-items-center mb-3">
-                <div className="bg-info text-white rounded-circle p-3 me-3">
-                  <i className="bi bi-calendar-check-fill fs-4"></i>
-                </div>
-                <h5 className="card-title text-info mb-0">Citas</h5>
-              </div>
-              <p className="card-text text-muted">Ver calendario y gestionar citas</p>
-              <button className="btn btn-info w-100 text-white" onClick={() => navigate('/citas')}>
-                Ir a Citas
               </button>
             </div>
           </div>
@@ -195,51 +263,39 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Estadísticas rápidas */}
-      <div className="row mt-5">
-        <div className="col-12">
-          <div className="card border-0 shadow-sm">
+        {/* ✨ NUEVO: Especies */}
+        <div className="col-md-4">
+          <div className="card h-100 border-dark shadow-sm">
             <div className="card-body">
-              <h5 className="card-title text-primary mb-4">
-                <i className="bi bi-graph-up me-2"></i>
-                Resumen del día
-              </h5>
-              {cargandoEstadisticas ? (
-                <div className="text-center">
-                  <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Cargando...</span>
-                  </div>
+              <div className="d-flex align-items-center mb-3">
+                <div className="bg-dark text-white rounded-circle p-3 me-3">
+                  <i className="bi bi-bookmarks-fill fs-4"></i>
                 </div>
-              ) : (
-                <div className="row text-center">
-                  <div className="col-md-3">
-                    <div className="p-3">
-                      <h3 className="text-info">{estadisticas.citasHoy}</h3>
-                      <p className="text-muted mb-0">Citas hoy</p>
-                    </div>
-                  </div>
-                  <div className="col-md-3">
-                    <div className="p-3">
-                      <h3 className="text-success">{estadisticas.consultasRealizadas}</h3>
-                      <p className="text-muted mb-0">Consultas realizadas hoy</p>
-                    </div>
-                  </div>
-                  <div className="col-md-3">
-                    <div className="p-3">
-                      <h3 className="text-warning">{estadisticas.citasPendientes}</h3>
-                      <p className="text-muted mb-0">Citas pendientes</p>
-                    </div>
-                  </div>
-                  <div className="col-md-3">
-                    <div className="p-3">
-                      <h3 className="text-primary">{estadisticas.totalPacientes}</h3>
-                      <p className="text-muted mb-0">Pacientes registrados</p>
-                    </div>
-                  </div>
+                <h5 className="card-title text-dark mb-0">Especies</h5>
+              </div>
+              <p className="card-text text-muted">Gestión de especies de animales</p>
+              <button className="btn btn-dark w-100" onClick={() => navigate('/especies')}>
+                Ir a Especies
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* ✨ NUEVO: Razas */}
+        <div className="col-md-4">
+          <div className="card h-100 border-primary shadow-sm">
+            <div className="card-body">
+              <div className="d-flex align-items-center mb-3">
+                <div className="bg-primary text-white rounded-circle p-3 me-3">
+                  <i className="bi bi-list-stars fs-4"></i>
                 </div>
-              )}
+                <h5 className="card-title text-primary mb-0">Razas</h5>
+              </div>
+              <p className="card-text text-muted">Gestión de razas por especie</p>
+              <button className="btn btn-primary w-100" onClick={() => navigate('/razas')}>
+                Ir a Razas
+              </button>
             </div>
           </div>
         </div>
