@@ -126,7 +126,6 @@ export default function RazasPage() {
     );
   }
 
-  // Continuación de RazasPage.tsx
 
   return (
     <div className="container mt-4">

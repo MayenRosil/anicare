@@ -150,7 +150,6 @@ export default function DoctoresPage() {
       </div>
     );
   }
-  // Continuación de DoctoresPage.tsx
 
   return (
     <div className="container mt-4">
@@ -266,7 +265,6 @@ export default function DoctoresPage() {
           </div>
         </div>
       )}
-      // Continuación de DoctoresPage.tsx - Modal
 
       {/* Modal para Crear/Editar */}
       {mostrarModal && (

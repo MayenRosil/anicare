@@ -115,50 +115,38 @@ export class ConsultaRepository implements IConsultaRepository {
     );
   }
 
-  async obtenerPorPaciente(idPaciente: number): Promise<Consulta[]> {
-    const query = `
-      SELECT 
-        c.id,
-        c.id_paciente,
-        c.id_doctor,
-        COALESCE(CONCAT(d.nombre, ' ', d.apellido), 'Sin asignar') as nombre_doctor,
-        c.fecha_hora,
-        c.estado,
-        c.notas_adicionales
-      FROM Consulta c
-      LEFT JOIN Doctor d ON c.id_doctor = d.id
-      WHERE c.id_paciente = ?
-      ORDER BY c.fecha_hora DESC
-    `;
-    
-    try {
-      const [rows] = await pool.query<RowDataPacket[]>(query, [idPaciente]);
-      
-      // Para cada consulta, obtener su diagnóstico
-      const consultasConDiagnostico = await Promise.all(
-        (rows as Consulta[]).map(async (consulta) => {
-          const [diagRows] = await pool.query<RowDataPacket[]>(
-            `SELECT diag.nombre as diagnostico
-             FROM DiagnosticoConsulta dc
-             LEFT JOIN Diagnostico diag ON dc.id_diagnostico = diag.id
-             WHERE dc.id_consulta = ?
-             LIMIT 1`,
-            [consulta.id]
-          );
-          
-          return {
-            ...consulta,
-            diagnostico: diagRows.length > 0 ? diagRows[0].diagnostico : null
-          };
-        })
-      );
-      
-      return consultasConDiagnostico;
-    } catch (error) {
-      console.error('Error en obtenerPorPaciente:', error);
-      throw error;
-    }
+// anicare-backend/src/infrastructure/repositories/ConsultaRepository.ts
+// REEMPLAZA el método obtenerPorPaciente con este:
+
+async obtenerPorPaciente(idPaciente: number): Promise<any[]> {
+  const query = `
+    SELECT 
+      c.id,
+      c.id_paciente,
+      c.id_doctor,
+      c.fecha_hora,
+      c.estado,
+      c.notas_adicionales,
+      d.nombre as doctor_nombre,
+      d.apellido as doctor_apellido,
+      GROUP_CONCAT(DISTINCT diag.nombre SEPARATOR ', ') as diagnosticos
+    FROM Consulta c
+    LEFT JOIN Doctor d ON c.id_doctor = d.id
+    LEFT JOIN DiagnosticoConsulta dc ON dc.id_consulta = c.id
+    LEFT JOIN Diagnostico diag ON dc.id_diagnostico = diag.id
+    WHERE c.id_paciente = ?
+    GROUP BY c.id, c.id_paciente, c.id_doctor, c.fecha_hora, c.estado, c.notas_adicionales, d.nombre, d.apellido
+    ORDER BY c.fecha_hora DESC
+  `;
+  
+  try {
+    const [rows]: any = await pool.query(query, [idPaciente]);
+    return rows;
+  } catch (error) {
+    console.error('Error en obtenerPorPaciente:', error);
+    throw error;
   }
+}
 
 
   

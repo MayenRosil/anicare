@@ -1,4 +1,4 @@
-// src/infrastructure/repositories/MedicamentoRepository.ts
+// anicare-backend/src/infrastructure/repositories/MedicamentoRepository.ts
 import pool from '../../shared/config/db';
 import { IMedicamentoRepository } from '../../domain/interfaces/IMedicamentoRepository';
 import { Medicamento } from '../../domain/entities/Medicamento';
@@ -26,11 +26,19 @@ export class MedicamentoRepository implements IMedicamentoRepository {
   }
 
   async obtenerTodos(): Promise<Medicamento[]> {
-    // Solo obtener medicamentos activos
     const [rows]: any = await pool.query(
       'SELECT * FROM Medicamento WHERE activo = TRUE ORDER BY nombre ASC'
     );
-    return rows;
+    
+    // ✅ CONVERTIR strings a números
+    return rows.map((med: any) => ({
+      ...med,
+      precio_compra: parseFloat(med.precio_compra) || 0,
+      precio_venta: parseFloat(med.precio_venta) || 0,
+      ganancia_venta: parseFloat(med.ganancia_venta) || 0,
+      stock_actual: parseInt(med.stock_actual) || 0,
+      stock_minimo: parseInt(med.stock_minimo) || 0
+    }));
   }
 
   async obtenerPorId(id: number): Promise<Medicamento | null> {
@@ -38,7 +46,19 @@ export class MedicamentoRepository implements IMedicamentoRepository {
       'SELECT * FROM Medicamento WHERE id = ? AND activo = TRUE', 
       [id]
     );
-    return rows.length ? rows[0] : null;
+    
+    if (rows.length === 0) return null;
+    
+    // ✅ CONVERTIR strings a números
+    const med = rows[0];
+    return {
+      ...med,
+      precio_compra: parseFloat(med.precio_compra) || 0,
+      precio_venta: parseFloat(med.precio_venta) || 0,
+      ganancia_venta: parseFloat(med.ganancia_venta) || 0,
+      stock_actual: parseInt(med.stock_actual) || 0,
+      stock_minimo: parseInt(med.stock_minimo) || 0
+    };
   }
 
   async actualizar(id: number, data: Partial<Medicamento>): Promise<void> {
@@ -66,7 +86,7 @@ export class MedicamentoRepository implements IMedicamentoRepository {
   }
 
   async eliminar(id: number): Promise<void> {
-    // Eliminación LÓGICA - marca como inactivo en lugar de eliminar
+    // Eliminación LÓGICA
     await pool.query('UPDATE Medicamento SET activo = FALSE WHERE id = ?', [id]);
   }
 }

@@ -154,7 +154,6 @@ export default function Dashboard() {
 
       {/* Módulos principales */}
       <div className="row g-4 mb-4">
-        // Continuación de Dashboard.tsx - Módulos principales
 
         {/* Pacientes */}
         <div className="col-md-4">

@@ -5,6 +5,8 @@ import { CrearPacienteUseCase } from '../../domain/use-cases/paciente/CrearPacie
 import { ObtenerTodosPacientesUseCase } from '../../domain/use-cases/paciente/ObtenerTodosPacientesUseCase';
 import { ObtenerPacientePorIdUseCase } from '../../domain/use-cases/paciente/ObtenerPacientePorIdUseCase';
 import { ObtenerPacientesPorPropietarioUseCase } from '../../domain/use-cases/paciente/ObtenerPacientesPorPropietarioUseCase';
+import { ActualizarPacienteUseCase } from '../../domain/use-cases/paciente/ActualizarPacienteUseCase';
+import { EliminarPacienteUseCase } from '../../domain/use-cases/paciente/EliminarPacienteUseCase';
 
 export class PacienteController {
   static async crear(req: Request, res: Response): Promise<void> {
@@ -53,4 +55,31 @@ export class PacienteController {
       res.status(500).json({ mensaje: 'Error al buscar pacientes por propietario', error });
     }
   }
+
+      // 🆕 Actualizar
+  static async actualizar(req: Request, res: Response): Promise<void> {
+    try {
+      const id = parseInt(req.params.id);
+      const repo = new PacienteRepository();
+      const useCase = new ActualizarPacienteUseCase(repo);
+      await useCase.execute(id, req.body);
+      res.json({ mensaje: 'Paciente actualizado correctamente' });
+    } catch (error) {
+      res.status(500).json({ mensaje: 'Error al actualizar paciente', error });
+    }
+  }
+
+  // 🆕 Eliminar
+  static async eliminar(req: Request, res: Response): Promise<void> {
+    try {
+      const id = parseInt(req.params.id);
+      const repo = new PacienteRepository();
+      const useCase = new EliminarPacienteUseCase(repo);
+      await useCase.execute(id);
+      res.json({ mensaje: 'Paciente eliminado correctamente' });
+    } catch (error) {
+      res.status(500).json({ mensaje: 'Error al eliminar paciente', error });
+    }
+  }
+
 }

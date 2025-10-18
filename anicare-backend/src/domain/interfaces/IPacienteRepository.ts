@@ -7,4 +7,7 @@ export interface IPacienteRepository {
     obtenerPorId(id: number): Promise<Paciente | null>;
     obtenerPorPropietario(id_propietario: number): Promise<Paciente[]>;
     desactivar?(id: number): Promise<void>;
+      actualizar(id: number, data: Partial<Paciente>): Promise<void>; // 🆕
+  eliminar(id: number): Promise<void>; // 🆕
+
 }

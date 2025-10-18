@@ -1,4 +1,3 @@
-// src/domain/entities/Paciente.ts
 export class Paciente {
   constructor(
     public id: number,
@@ -7,6 +6,10 @@ export class Paciente {
     public nombre: string,
     public sexo: 'M' | 'F',
     public fecha_nacimiento: Date,
-    public color: string
+    public color: string,
+    // Campos opcionales para nombres populados
+    public nombre_propietario?: string,
+    public nombre_raza?: string,
+    public nombre_especie?: string
   ) {}
 }

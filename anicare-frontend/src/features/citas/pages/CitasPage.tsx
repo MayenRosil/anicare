@@ -283,7 +283,12 @@ export default function CitasPage() {
             {vistaActual === 'calendario' ? 'Vista de Calendario' : 'Historial de Citas'}
           </p>
         </div>
+                <button className="btn btn-outline-secondary" onClick={() => navigate('/dashboard')}>
+          <i className="bi bi-arrow-left me-2"></i>
+          Volver al Dashboard
+        </button>
         <div className="btn-group" role="group">
+          
           <button
             type="button"
             className={`btn ${vistaActual === 'calendario' ? 'btn-primary' : 'btn-outline-primary'}`}

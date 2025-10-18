@@ -12,5 +12,18 @@ router.get('/pacientes/propietario/:id_propietario', verifyToken, PacienteContro
 router.post('/pacientes', verifyToken, PacienteController.crear);
 router.get('/pacientes/:id/consultas', ConsultaController.listarPorPaciente); // 👈 consulta pero colgada de pacientes
 
+// Listar todos
+
+// Obtener por ID
+router.get('/pacientes/:id', verifyToken, PacienteController.obtenerPorId);
+
+// Crear
+router.post('/pacientes', verifyToken, PacienteController.crear);
+
+// 🆕 Actualizar
+router.put('/pacientes/:id', verifyToken, PacienteController.actualizar);
+
+// 🆕 Eliminar
+router.delete('/pacientes/:id', verifyToken, PacienteController.eliminar);
 
 export default router;

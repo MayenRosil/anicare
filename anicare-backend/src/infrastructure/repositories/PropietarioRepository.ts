@@ -65,4 +65,52 @@ export class PropietarioRepository implements IPropietarioRepository {
       row.correo
     );
   }
+// 🆕 Actualizar
+async actualizar(id: number, data: Partial<Propietario>): Promise<void> {
+  const campos = [];
+  const valores: any[] = [];
+
+  if (data.nombre !== undefined) {
+    campos.push('nombre = ?');
+    valores.push(data.nombre);
+  }
+  if (data.apellido !== undefined) {
+    campos.push('apellido = ?');
+    valores.push(data.apellido);
+  }
+  if (data.dpi !== undefined) {
+    campos.push('dpi = ?');
+    valores.push(data.dpi);
+  }
+  if (data.nit !== undefined) {
+    campos.push('nit = ?');
+    valores.push(data.nit);
+  }
+  if (data.direccion !== undefined) {
+    campos.push('direccion = ?');
+    valores.push(data.direccion);
+  }
+  if (data.telefono !== undefined) {
+    campos.push('telefono = ?');
+    valores.push(data.telefono);
+  }
+  if (data.correo !== undefined) {
+    campos.push('correo = ?');
+    valores.push(data.correo);
+  }
+
+  if (campos.length === 0) return;
+
+  valores.push(id);
+  await pool.query(
+    `UPDATE Propietario SET ${campos.join(', ')} WHERE id = ?`,
+    valores
+  );
+}
+
+// 🆕 Eliminar
+async eliminar(id: number): Promise<void> {
+  await pool.query('DELETE FROM Propietario WHERE id = ?', [id]);
+}
+
 }
