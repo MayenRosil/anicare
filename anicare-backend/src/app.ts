@@ -15,6 +15,7 @@ import diagnosticoRoutes from './application/routes/diagnostico.routes';
 import tratamientoRoutes from './application/routes/tratamiento.routes';
 import medicamentoRoutes from './application/routes/medicamento.routes'; // ✨ NUEVO
 import especieRoutes from './application/routes/especie.routes';
+import movimientoInventarioRoutes from './application/routes/movimientoInventario.routes';
 
 dotenv.config();
 const app = express();
@@ -34,6 +35,7 @@ app.use('/api/diagnosticos', diagnosticoRoutes);
 app.use('/api/tratamientos', tratamientoRoutes);
 app.use('/api', medicamentoRoutes); // ✨ NUEVO
 app.use('/api', especieRoutes); // ✨ NUEVO
+app.use('/api', movimientoInventarioRoutes);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {

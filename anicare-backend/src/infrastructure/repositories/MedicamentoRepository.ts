@@ -8,8 +8,8 @@ export class MedicamentoRepository implements IMedicamentoRepository {
     const [result]: any = await pool.query(
       `INSERT INTO Medicamento 
         (nombre, laboratorio, presentacion, unidad_medida, precio_compra, 
-         precio_venta, ganancia_venta, stock_actual, stock_minimo, activo)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)`,
+         precio_venta, ganancia_venta, stock_actual, activo)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE)`,
       [
         data.nombre,
         data.laboratorio,
@@ -18,8 +18,7 @@ export class MedicamentoRepository implements IMedicamentoRepository {
         data.precio_compra,
         data.precio_venta,
         data.ganancia_venta,
-        data.stock_actual,
-        data.stock_minimo
+        data.stock_actual
       ]
     );
     return result.insertId as number;
@@ -30,14 +29,13 @@ export class MedicamentoRepository implements IMedicamentoRepository {
       'SELECT * FROM Medicamento WHERE activo = TRUE ORDER BY nombre ASC'
     );
     
-    // ✅ CONVERTIR strings a números
+    // Convertir strings a números
     return rows.map((med: any) => ({
       ...med,
-      precio_compra: parseFloat(med.precio_compra) || 0,
-      precio_venta: parseFloat(med.precio_venta) || 0,
-      ganancia_venta: parseFloat(med.ganancia_venta) || 0,
-      stock_actual: parseInt(med.stock_actual) || 0,
-      stock_minimo: parseInt(med.stock_minimo) || 0
+      precio_compra: med.precio_compra ? parseFloat(med.precio_compra) : null,
+      precio_venta: med.precio_venta ? parseFloat(med.precio_venta) : null,
+      ganancia_venta: med.ganancia_venta ? parseFloat(med.ganancia_venta) : null,
+      stock_actual: parseInt(med.stock_actual) || 0
     }));
   }
 
@@ -49,15 +47,13 @@ export class MedicamentoRepository implements IMedicamentoRepository {
     
     if (rows.length === 0) return null;
     
-    // ✅ CONVERTIR strings a números
     const med = rows[0];
     return {
       ...med,
-      precio_compra: parseFloat(med.precio_compra) || 0,
-      precio_venta: parseFloat(med.precio_venta) || 0,
-      ganancia_venta: parseFloat(med.ganancia_venta) || 0,
-      stock_actual: parseInt(med.stock_actual) || 0,
-      stock_minimo: parseInt(med.stock_minimo) || 0
+      precio_compra: med.precio_compra ? parseFloat(med.precio_compra) : null,
+      precio_venta: med.precio_venta ? parseFloat(med.precio_venta) : null,
+      ganancia_venta: med.ganancia_venta ? parseFloat(med.ganancia_venta) : null,
+      stock_actual: parseInt(med.stock_actual) || 0
     };
   }
 
@@ -67,8 +63,7 @@ export class MedicamentoRepository implements IMedicamentoRepository {
 
     const columnasValidas = [
       'nombre', 'laboratorio', 'presentacion', 'unidad_medida',
-      'precio_compra', 'precio_venta', 'ganancia_venta',
-      'stock_actual', 'stock_minimo'
+      'precio_compra', 'precio_venta', 'ganancia_venta', 'stock_actual'
     ];
 
     for (const [key, value] of Object.entries(data)) {
@@ -82,6 +77,13 @@ export class MedicamentoRepository implements IMedicamentoRepository {
     await pool.query(
       `UPDATE Medicamento SET ${campos.join(', ')} WHERE id = ?`,
       [...valores, id]
+    );
+  }
+
+  async actualizarStock(id: number, nuevoStock: number): Promise<void> {
+    await pool.query(
+      'UPDATE Medicamento SET stock_actual = ? WHERE id = ?',
+      [nuevoStock, id]
     );
   }
 

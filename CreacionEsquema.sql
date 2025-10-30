@@ -102,7 +102,7 @@ CREATE TABLE Cita (
     FOREIGN KEY (id_usuario_registro) REFERENCES Usuario(id)
 );
 
--- Tabla: Consulta (✨ ACTUALIZADA con signos vitales)
+-- Tabla: Consulta (con signos vitales)
 CREATE TABLE Consulta (
     id INT AUTO_INCREMENT PRIMARY KEY,
     id_paciente INT,
@@ -112,7 +112,6 @@ CREATE TABLE Consulta (
     fecha_hora DATETIME NOT NULL,
     estado ENUM('Abierta', 'Finalizada', 'Cancelada') DEFAULT 'Abierta',
     notas_adicionales TEXT,
-    -- ✨ NUEVOS CAMPOS - Signos vitales y examen previo
     motivo_consulta TEXT,
     peso DECIMAL(5,2),
     temperatura DECIMAL(4,2),
@@ -143,19 +142,31 @@ CREATE TABLE DiagnosticoConsulta (
     FOREIGN KEY (id_diagnostico) REFERENCES Diagnostico(id)
 );
 
--- Tabla: Medicamento
+-- ✨ Tabla: Medicamento (SIN stock_minimo, campos opcionales excepto nombre y laboratorio)
 CREATE TABLE Medicamento (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
-    laboratorio VARCHAR(100),
+    laboratorio VARCHAR(100) NOT NULL,
     presentacion VARCHAR(100),
     unidad_medida VARCHAR(50),
     precio_compra DECIMAL(10,2),
     precio_venta DECIMAL(10,2),
     ganancia_venta DECIMAL(10,2),
     stock_actual INT DEFAULT 0,
-    stock_minimo INT DEFAULT 0,
     activo BOOLEAN DEFAULT TRUE
+);
+
+-- ✨ NUEVA TABLA: MovimientosInventario
+CREATE TABLE MovimientosInventario (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_medicamento INT NOT NULL,
+    tipo_movimiento ENUM('Entrada', 'Salida') NOT NULL,
+    cantidad INT NOT NULL,
+    fecha_movimiento DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    observaciones TEXT,
+    id_usuario INT,
+    FOREIGN KEY (id_medicamento) REFERENCES Medicamento(id),
+    FOREIGN KEY (id_usuario) REFERENCES Usuario(id)
 );
 
 -- Tabla: Tratamiento
@@ -228,8 +239,7 @@ INSERT INTO Medicamento (
   precio_compra,
   precio_venta,
   ganancia_venta,
-  stock_actual,
-  stock_minimo
+  stock_actual
 )
 VALUES (
   1,
@@ -240,21 +250,19 @@ VALUES (
   0.00,
   0.00,
   0.00,
-  0,
   0
 )
 ON DUPLICATE KEY UPDATE nombre = VALUES(nombre);
 
--- ✨ Medicamentos de ejemplo
-INSERT INTO Medicamento (nombre, laboratorio, presentacion, unidad_medida, precio_compra, precio_venta, ganancia_venta, stock_actual, stock_minimo)
+-- ✨ Medicamentos de ejemplo (sin stock_minimo)
+INSERT INTO Medicamento (nombre, laboratorio, presentacion, unidad_medida, precio_compra, precio_venta, ganancia_venta, stock_actual)
 VALUES 
-('Amoxicilina', 'Bayer', 'Tabletas 500mg', 'Tableta', 2.50, 5.00, 2.50, 100, 20),
-('Meloxicam', 'Boehringer', 'Inyectable 5mg/ml', 'ml', 15.00, 25.00, 10.00, 50, 10),
-('Dexametasona', 'Pfizer', 'Inyectable 4mg/ml', 'ml', 8.00, 15.00, 7.00, 75, 15),
-('Omeprazol', 'Laboratorios Unidos', 'Cápsulas 20mg', 'Cápsula', 1.50, 3.50, 2.00, 200, 30),
-('Ivermectina', 'MSD', 'Solución oral 1%', 'ml', 12.00, 22.00, 10.00, 60, 10),
-('Metronidazol', 'Bayer', 'Tabletas 250mg', 'Tableta', 1.80, 4.00, 2.20, 150, 25);
-
+('Amoxicilina', 'Bayer', 'Tabletas 500mg', 'Tableta', 2.50, 5.00, 2.50, 100),
+('Meloxicam', 'Boehringer', 'Inyectable 5mg/ml', 'ml', 15.00, 25.00, 10.00, 50),
+('Dexametasona', 'Pfizer', 'Inyectable 4mg/ml', 'ml', 8.00, 15.00, 7.00, 75),
+('Omeprazol', 'Laboratorios Unidos', 'Cápsulas 20mg', 'Cápsula', 1.50, 3.50, 2.00, 200),
+('Ivermectina', 'MSD', 'Solución oral 1%', 'ml', 12.00, 22.00, 10.00, 60),
+('Metronidazol', 'Bayer', 'Tabletas 250mg', 'Tableta', 1.80, 4.00, 2.20, 150);
 
 -- Datos de ejemplo para pruebas
 INSERT INTO Propietario (nombre, apellido, dpi, nit, direccion, telefono, correo)

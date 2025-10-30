@@ -2,18 +2,18 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { obtenerMedicamentos, crearMedicamento, actualizarMedicamento, eliminarMedicamento } from '../services/medicamentoService';
+import { ModalMovimientoInventario } from '../components/ModalMovimientoInventario';
 
 interface Medicamento {
   id?: number;
   nombre: string;
   laboratorio: string;
-  presentacion: string;
-  unidad_medida: string;
-  precio_compra: number;
-  precio_venta: number;
-  ganancia_venta: number;
+  presentacion: string | null;
+  unidad_medida: string | null;
+  precio_compra: number | null;
+  precio_venta: number | null;
+  ganancia_venta: number | null;
   stock_actual: number;
-  stock_minimo: number;
 }
 
 export default function MedicamentosPage() {
@@ -25,6 +25,11 @@ export default function MedicamentosPage() {
   const [medicamentoEditar, setMedicamentoEditar] = useState<Medicamento | null>(null);
   const [busqueda, setBusqueda] = useState('');
 
+  // Estados para el modal de movimientos
+  const [mostrarModalMovimiento, setMostrarModalMovimiento] = useState(false);
+  const [medicamentoMovimiento, setMedicamentoMovimiento] = useState<any>(null);
+  const [tipoMovimiento, setTipoMovimiento] = useState<'Entrada' | 'Salida'>('Entrada');
+
   const [formData, setFormData] = useState({
     nombre: '',
     laboratorio: '',
@@ -33,8 +38,7 @@ export default function MedicamentosPage() {
     precio_compra: 0,
     precio_venta: 0,
     ganancia_venta: 0,
-    stock_actual: 0,
-    stock_minimo: 0
+    stock_actual: 0
   });
 
   useEffect(() => {
@@ -43,7 +47,9 @@ export default function MedicamentosPage() {
 
   // Calcular ganancia automáticamente
   useEffect(() => {
-    const ganancia = formData.precio_venta - formData.precio_compra;
+    const compra = formData.precio_compra || 0;
+    const venta = formData.precio_venta || 0;
+    const ganancia = venta - compra;
     setFormData(prev => ({ ...prev, ganancia_venta: ganancia }));
   }, [formData.precio_compra, formData.precio_venta]);
 
@@ -71,8 +77,7 @@ export default function MedicamentosPage() {
       precio_compra: 0,
       precio_venta: 0,
       ganancia_venta: 0,
-      stock_actual: 0,
-      stock_minimo: 0
+      stock_actual: 0
     });
     setMostrarModal(true);
   };
@@ -83,13 +88,12 @@ export default function MedicamentosPage() {
     setFormData({
       nombre: med.nombre,
       laboratorio: med.laboratorio,
-      presentacion: med.presentacion,
-      unidad_medida: med.unidad_medida,
-      precio_compra: med.precio_compra,
-      precio_venta: med.precio_venta,
-      ganancia_venta: med.ganancia_venta,
-      stock_actual: med.stock_actual,
-      stock_minimo: med.stock_minimo
+      presentacion: med.presentacion || '',
+      unidad_medida: med.unidad_medida || '',
+      precio_compra: med.precio_compra || 0,
+      precio_venta: med.precio_venta || 0,
+      ganancia_venta: med.ganancia_venta || 0,
+      stock_actual: med.stock_actual
     });
     setMostrarModal(true);
   };
@@ -104,8 +108,7 @@ export default function MedicamentosPage() {
       precio_compra: 0,
       precio_venta: 0,
       ganancia_venta: 0,
-      stock_actual: 0,
-      stock_minimo: 0
+      stock_actual: 0
     });
     setMedicamentoEditar(null);
   };
@@ -119,13 +122,23 @@ export default function MedicamentosPage() {
     }
 
     try {
+      const dataToSend = {
+        ...formData,
+        presentacion: formData.presentacion.trim() || null,
+        unidad_medida: formData.unidad_medida.trim() || null,
+        precio_compra: formData.precio_compra || null,
+        precio_venta: formData.precio_venta || null,
+        ganancia_venta: formData.ganancia_venta || null
+      };
+
       if (modoEdicion && medicamentoEditar) {
-        await actualizarMedicamento(medicamentoEditar.id!, formData);
+        await actualizarMedicamento(medicamentoEditar.id!, dataToSend);
         alert('Medicamento actualizado exitosamente');
       } else {
-        await crearMedicamento(formData);
+        await crearMedicamento(dataToSend);
         alert('Medicamento creado exitosamente');
       }
+
       cerrarModal();
       cargarMedicamentos();
     } catch (error) {
@@ -134,22 +147,28 @@ export default function MedicamentosPage() {
     }
   };
 
-  const handleEliminar = async (id: number, nombre: string) => {
-    if (!confirm(`¿Estás seguro de eliminar el medicamento "${nombre}"?`)) return;
-
-    try {
-      await eliminarMedicamento(id);
-      alert('Medicamento eliminado exitosamente');
-      cargarMedicamentos();
-    } catch (error) {
-      console.error(error);
-      alert('Error al eliminar medicamento');
+  const handleEliminar = async (id: number) => {
+    if (window.confirm('¿Estás seguro de eliminar este medicamento?')) {
+      try {
+        await eliminarMedicamento(id);
+        alert('Medicamento eliminado exitosamente');
+        cargarMedicamentos();
+      } catch (error) {
+        console.error(error);
+        alert('Error al eliminar medicamento');
+      }
     }
   };
 
-  const medicamentosFiltrados = medicamentos.filter(m =>
-    m.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-    m.laboratorio.toLowerCase().includes(busqueda.toLowerCase())
+  const abrirModalMovimiento = (med: Medicamento, tipo: 'Entrada' | 'Salida') => {
+    setMedicamentoMovimiento(med);
+    setTipoMovimiento(tipo);
+    setMostrarModalMovimiento(true);
+  };
+
+  const medicamentosFiltrados = medicamentos.filter(med =>
+    med.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+    med.laboratorio.toLowerCase().includes(busqueda.toLowerCase())
   );
 
   if (loading) {
@@ -171,7 +190,7 @@ export default function MedicamentosPage() {
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h3 className="text-primary mb-1">
-            <i className="bi bi-capsule me-2"></i>
+            <i className="bi bi-capsule-pill me-2"></i>
             Medicamentos
           </h3>
           <p className="text-muted mb-0">
@@ -225,9 +244,10 @@ export default function MedicamentosPage() {
                     <th>Nombre</th>
                     <th>Laboratorio</th>
                     <th>Presentación</th>
+                    <th>Stock</th>
                     <th>P. Compra</th>
                     <th>P. Venta</th>
-                    <th>Stock</th>
+                    <th>Ganancia</th>
                     <th className="text-center">Acciones</th>
                   </tr>
                 </thead>
@@ -239,24 +259,49 @@ export default function MedicamentosPage() {
                         <strong>{med.nombre}</strong>
                       </td>
                       <td>{med.laboratorio}</td>
-                      <td>{med.presentacion}</td>
-                      <td>Q{med.precio_compra.toFixed(2)}</td>
-                      <td>Q{med.precio_venta.toFixed(2)}</td>
+                      <td>{med.presentacion || '-'}</td>
                       <td>
-                        <span className={`badge ${med.stock_actual <= med.stock_minimo ? 'bg-danger' : 'bg-success'}`}>
+                        <span className={`badge ${med.stock_actual > 0 ? 'bg-success' : 'bg-danger'}`}>
                           {med.stock_actual}
                         </span>
                       </td>
+                      <td>{med.precio_compra ? `Q ${med.precio_compra.toFixed(2)}` : '-'}</td>
+                      <td>{med.precio_venta ? `Q ${med.precio_venta.toFixed(2)}` : '-'}</td>
+                      <td>{med.ganancia_venta ? `Q ${med.ganancia_venta.toFixed(2)}` : '-'}</td>
                       <td className="text-center">
+                        {/* Botón Entrada */}
+                        <button
+                          className="btn btn-sm btn-outline-success me-2"
+                          onClick={() => abrirModalMovimiento(med, 'Entrada')}
+                          title="Registrar Entrada"
+                        >
+                          <i className="bi bi-arrow-down-circle"></i> Entrada
+                        </button>
+
+                        {/* Botón Salida */}
+                        <button
+                          className="btn btn-sm btn-outline-warning me-2"
+                          onClick={() => abrirModalMovimiento(med, 'Salida')}
+                          title="Registrar Salida"
+                          disabled={med.stock_actual === 0}
+                        >
+                          <i className="bi bi-arrow-up-circle"></i> Salida
+                        </button>
+
+                        {/* Botón Editar */}
                         <button
                           className="btn btn-sm btn-outline-primary me-2"
                           onClick={() => abrirModalEditar(med)}
+                          title="Editar"
                         >
                           <i className="bi bi-pencil-fill"></i> Editar
                         </button>
+
+                        {/* Botón Eliminar */}
                         <button
-                          className="btn btn-sm btn-outline-danger"
-                          onClick={() => handleEliminar(med.id!, med.nombre)}
+                          className="btn btn-sm btn-outline-danger me-2"
+                          onClick={() => handleEliminar(med.id!)}
+                          title="Eliminar"
                         >
                           <i className="bi bi-trash-fill"></i> Eliminar
                         </button>
@@ -270,10 +315,10 @@ export default function MedicamentosPage() {
         </div>
       )}
 
-      {/* Modal para Crear/Editar */}
+      {/* Modal CRUD Medicamento */}
       {mostrarModal && (
         <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-dialog-centered modal-lg">
+          <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">
@@ -284,8 +329,11 @@ export default function MedicamentosPage() {
               <form onSubmit={handleSubmit}>
                 <div className="modal-body">
                   <div className="row">
+                    {/* Nombre */}
                     <div className="col-md-6 mb-3">
-                      <label className="form-label">Nombre *</label>
+                      <label className="form-label">
+                        Nombre <span className="text-danger">*</span>
+                      </label>
                       <input
                         type="text"
                         className="form-control"
@@ -294,8 +342,12 @@ export default function MedicamentosPage() {
                         required
                       />
                     </div>
+
+                    {/* Laboratorio */}
                     <div className="col-md-6 mb-3">
-                      <label className="form-label">Laboratorio *</label>
+                      <label className="form-label">
+                        Laboratorio <span className="text-danger">*</span>
+                      </label>
                       <input
                         type="text"
                         className="form-control"
@@ -305,7 +357,9 @@ export default function MedicamentosPage() {
                       />
                     </div>
                   </div>
+
                   <div className="row">
+                    {/* Presentación */}
                     <div className="col-md-6 mb-3">
                       <label className="form-label">Presentación</label>
                       <input
@@ -313,8 +367,11 @@ export default function MedicamentosPage() {
                         className="form-control"
                         value={formData.presentacion}
                         onChange={(e) => setFormData({ ...formData, presentacion: e.target.value })}
+                        placeholder="Ej: Tabletas 500mg"
                       />
                     </div>
+
+                    {/* Unidad de medida */}
                     <div className="col-md-6 mb-3">
                       <label className="form-label">Unidad de Medida</label>
                       <input
@@ -322,10 +379,13 @@ export default function MedicamentosPage() {
                         className="form-control"
                         value={formData.unidad_medida}
                         onChange={(e) => setFormData({ ...formData, unidad_medida: e.target.value })}
+                        placeholder="Ej: Tableta, ml, cápsula"
                       />
                     </div>
                   </div>
+
                   <div className="row">
+                    {/* Precio Compra */}
                     <div className="col-md-4 mb-3">
                       <label className="form-label">Precio Compra (Q)</label>
                       <input
@@ -336,6 +396,8 @@ export default function MedicamentosPage() {
                         onChange={(e) => setFormData({ ...formData, precio_compra: parseFloat(e.target.value) || 0 })}
                       />
                     </div>
+
+                    {/* Precio Venta */}
                     <div className="col-md-4 mb-3">
                       <label className="form-label">Precio Venta (Q)</label>
                       <input
@@ -346,6 +408,8 @@ export default function MedicamentosPage() {
                         onChange={(e) => setFormData({ ...formData, precio_venta: parseFloat(e.target.value) || 0 })}
                       />
                     </div>
+
+                    {/* Ganancia (calculada automáticamente) */}
                     <div className="col-md-4 mb-3">
                       <label className="form-label">Ganancia (Q)</label>
                       <input
@@ -358,27 +422,37 @@ export default function MedicamentosPage() {
                       />
                     </div>
                   </div>
+
                   <div className="row">
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label">Stock Actual</label>
+                    {/* Stock Actual */}
+                    <div className="col-md-12 mb-3">
+                      <label className="form-label">
+                        Stock Actual <span className="text-danger">*</span>
+                      </label>
                       <input
                         type="number"
                         className="form-control"
                         value={formData.stock_actual}
                         onChange={(e) => setFormData({ ...formData, stock_actual: parseInt(e.target.value) || 0 })}
+                        required
+                        disabled={modoEdicion}
                       />
-                    </div>
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label">Stock Mínimo</label>
-                      <input
-                        type="number"
-                        className="form-control"
-                        value={formData.stock_minimo}
-                        onChange={(e) => setFormData({ ...formData, stock_minimo: parseInt(e.target.value) || 0 })}
-                      />
+                      {modoEdicion && (
+                        <small className="text-muted">
+                          Para modificar el stock, usa los botones "Entrada" o "Salida" en la tabla
+                        </small>
+                      )}
                     </div>
                   </div>
+
+                  <div className="alert alert-info">
+                    <small>
+                      <strong>Nota:</strong> Los campos marcados con <span className="text-danger">*</span> son obligatorios.
+                      Los demás campos son opcionales y pueden usarse cuando el medicamento se venda en la clínica.
+                    </small>
+                  </div>
                 </div>
+
                 <div className="modal-footer">
                   <button type="button" className="btn btn-secondary" onClick={cerrarModal}>
                     Cancelar
@@ -391,6 +465,17 @@ export default function MedicamentosPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal de Movimiento de Inventario */}
+      {mostrarModalMovimiento && medicamentoMovimiento && (
+        <ModalMovimientoInventario
+          show={mostrarModalMovimiento}
+          onClose={() => setMostrarModalMovimiento(false)}
+          medicamento={medicamentoMovimiento}
+          tipoMovimiento={tipoMovimiento}
+          onSuccess={cargarMedicamentos}
+        />
       )}
     </div>
   );
