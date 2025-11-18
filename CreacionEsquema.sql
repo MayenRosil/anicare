@@ -27,9 +27,9 @@ CREATE TABLE Propietario (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     apellido VARCHAR(100) NOT NULL,
-    dpi VARCHAR(20) NOT NULL,
-    nit VARCHAR(20),
-    direccion TEXT,
+    dpi VARCHAR(13),
+    nit VARCHAR(10),
+    direccion TEXT ,
     telefono VARCHAR(20),
     correo VARCHAR(100)
 );

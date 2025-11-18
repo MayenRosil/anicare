@@ -97,8 +97,8 @@ export default function PropietariosPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.nombre.trim() || !formData.apellido.trim() || !formData.dpi.trim()) {
-      alert('El nombre, apellido y DPI son obligatorios');
+    if (!formData.nombre.trim() || !formData.apellido.trim()) {
+      alert('El nombre y apellido son obligatorios');
       return;
     }
 
@@ -287,13 +287,13 @@ export default function PropietariosPage() {
                   </div>
                   <div className="row">
                     <div className="col-md-6 mb-3">
-                      <label className="form-label">DPI *</label>
+                      <label className="form-label">DPI </label>
                       <input
                         type="text"
                         className="form-control"
                         value={formData.dpi}
                         onChange={(e) => setFormData({ ...formData, dpi: e.target.value })}
-                        required
+               
                       />
                     </div>
                     <div className="col-md-6 mb-3">
