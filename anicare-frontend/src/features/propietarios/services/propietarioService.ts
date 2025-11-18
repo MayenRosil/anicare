@@ -36,3 +36,9 @@ export const eliminarPropietario = async (id: number): Promise<any> => {
   const response = await axiosInstance.delete(`/propietarios/${id}`);
   return response.data;
 };
+
+// 🆕 Obtener pacientes de un propietario
+export const obtenerPacientesPorPropietario = async (idPropietario: number): Promise<any[]> => {
+  const response = await axiosInstance.get(`/propietarios/${idPropietario}/pacientes`);
+  return response.data;
+};
