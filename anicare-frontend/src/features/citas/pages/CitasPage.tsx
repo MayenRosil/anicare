@@ -551,7 +551,7 @@ export default function CitasPage() {
                 </div>
 
                 <div className="mb-3">
-                  <label className="form-label">Comentario</label>
+                  <label className="form-label">Motivo de Cita</label>
                   <input type="text" className="form-control" value={comentario} onChange={(e) => setComentario(e.target.value)} required />
                 </div>
 
