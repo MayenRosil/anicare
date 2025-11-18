@@ -253,11 +253,11 @@ export default function Dashboard() {
                 <div className="bg-danger text-white rounded-circle p-3 me-3">
                   <i className="bi bi-capsule-pill fs-4"></i>
                 </div>
-                <h5 className="card-title text-danger mb-0">Medicamentos</h5>
+                <h5 className="card-title text-danger mb-0">Productos</h5>
               </div>
-              <p className="card-text text-muted">Inventario de medicamentos</p>
-              <button className="btn btn-danger w-100" onClick={() => navigate('/medicamentos')}>
-                Ir a Medicamentos
+              <p className="card-text text-muted">Inventario de productos</p>
+              <button className="btn btn-danger w-100" onClick={() => navigate('/productos')}>
+                Ir a Productos
               </button>
             </div>
           </div>

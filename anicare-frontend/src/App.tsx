@@ -34,7 +34,7 @@ export default function App() {
       <Route path="/consulta/:idConsulta" element={<ConsultaDetallePage />} />
       <Route path="/paciente/:idPaciente/historial" element={<HistorialClinicoPage />} />
       {/* <Route path="/consulta/:idConsulta" element={<FichaClinicaPage />} /> */}
-      <Route path="/medicamentos" element={<PrivateRoute><MedicamentosPage /></PrivateRoute>} /> {/* 🆕 */}
+      <Route path="/productos" element={<PrivateRoute><MedicamentosPage /></PrivateRoute>} /> {/* 🆕 */}
       <Route path="/consultas" element={<PrivateRoute><ConsultasPage /></PrivateRoute>} /> {/* NUEVO */}
       <Route path="/doctores" element={<PrivateRoute><DoctoresPage /></PrivateRoute>} /> {/* NUEVO */}
 

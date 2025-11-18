@@ -191,10 +191,10 @@ export default function MedicamentosPage() {
         <div>
           <h3 className="text-primary mb-1">
             <i className="bi bi-capsule-pill me-2"></i>
-            Medicamentos
+            Productos
           </h3>
           <p className="text-muted mb-0">
-            {medicamentos.length} medicamento{medicamentos.length !== 1 ? 's' : ''} registrado{medicamentos.length !== 1 ? 's' : ''}
+            {medicamentos.length} producto{medicamentos.length !== 1 ? 's' : ''} registrado{medicamentos.length !== 1 ? 's' : ''}
           </p>
         </div>
         <div>
@@ -204,7 +204,7 @@ export default function MedicamentosPage() {
           </button>
           <button className="btn btn-primary" onClick={abrirModalNuevo}>
             <i className="bi bi-plus-circle me-2"></i>
-            Nuevo Medicamento
+            Nuevo Producto
           </button>
         </div>
       </div>
@@ -219,7 +219,7 @@ export default function MedicamentosPage() {
             <input
               type="text"
               className="form-control"
-              placeholder="Buscar por nombre o laboratorio..."
+              placeholder="Buscar por nombre o laboratorio/marca..."
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
             />
@@ -231,7 +231,7 @@ export default function MedicamentosPage() {
       {medicamentosFiltrados.length === 0 ? (
         <div className="alert alert-info">
           <i className="bi bi-info-circle me-2"></i>
-          No hay medicamentos registrados{busqueda && ' que coincidan con la búsqueda'}.
+          No hay productos registrados{busqueda && ' que coincidan con la búsqueda'}.
         </div>
       ) : (
         <div className="card">
@@ -242,7 +242,7 @@ export default function MedicamentosPage() {
                   <tr>
                     <th>#</th>
                     <th>Nombre</th>
-                    <th>Laboratorio</th>
+                    <th>Laboratorio/Marca</th>
                     <th>Presentación</th>
                     <th>Stock</th>
                     <th>P. Compra</th>
@@ -322,7 +322,7 @@ export default function MedicamentosPage() {
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">
-                  {modoEdicion ? 'Editar Medicamento' : 'Nuevo Medicamento'}
+                  {modoEdicion ? 'Editar Producto' : 'Nuevo Producto'}
                 </h5>
                 <button type="button" className="btn-close" onClick={cerrarModal}></button>
               </div>
@@ -346,7 +346,7 @@ export default function MedicamentosPage() {
                     {/* Laboratorio */}
                     <div className="col-md-6 mb-3">
                       <label className="form-label">
-                        Laboratorio <span className="text-danger">*</span>
+                        Laboratorio/Marca <span className="text-danger">*</span>
                       </label>
                       <input
                         type="text"
@@ -448,7 +448,7 @@ export default function MedicamentosPage() {
                   <div className="alert alert-info">
                     <small>
                       <strong>Nota:</strong> Los campos marcados con <span className="text-danger">*</span> son obligatorios.
-                      Los demás campos son opcionales y pueden usarse cuando el medicamento se venda en la clínica.
+                      Los demás campos son opcionales y pueden usarse cuando el producto se venda en la clínica.
                     </small>
                   </div>
                 </div>
