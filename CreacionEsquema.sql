@@ -84,6 +84,7 @@ CREATE TABLE Doctor (
     dpi VARCHAR(20),
     telefono VARCHAR(20),
     correo VARCHAR(100),
+    colegiado VARCHAR(20),
     activo BOOLEAN DEFAULT TRUE,
     FOREIGN KEY (id_usuario) REFERENCES Usuario(id)
 );

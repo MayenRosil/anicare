@@ -20,6 +20,7 @@ export default function DoctoresPage() {
     dpi: '',
     telefono: '',
     correo: '',
+    colegiado: '',
     activo: true
   });
 
@@ -50,6 +51,7 @@ export default function DoctoresPage() {
       dpi: '',
       telefono: '',
       correo: '',
+      colegiado: '',
       activo: true
     });
     setMostrarModal(true);
@@ -65,6 +67,7 @@ export default function DoctoresPage() {
       dpi: doctor.dpi,
       telefono: doctor.telefono,
       correo: doctor.correo,
+      colegiado: doctor.colegiado,
       activo: doctor.activo ?? true
     });
     setMostrarModal(true);
@@ -79,6 +82,7 @@ export default function DoctoresPage() {
       dpi: '',
       telefono: '',
       correo: '',
+      colegiado: '',
       activo: true
     });
     setDoctorEditar(null);
@@ -341,6 +345,22 @@ export default function DoctoresPage() {
                         maxLength={13}
                       />
                       <small className="text-muted">13 dígitos</small>
+                    </div>
+
+                                        {/* DPI */}
+                    <div className="col-md-6 mb-3">
+                      <label className="form-label">
+                        Colegiado *
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={formData.colegiado}
+                        onChange={(e) => setFormData({ ...formData, colegiado: e.target.value })}
+                        required
+                        placeholder="Ej: 123456789"
+                        maxLength={20}
+                      />
                     </div>
 
                     {/* Teléfono */}

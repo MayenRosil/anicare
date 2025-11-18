@@ -14,12 +14,13 @@ export class DoctorRepository implements IDoctorRepository {
       dpi,
       telefono, 
       correo,
+      colegiado,
       activo
     } = data;
 
-    const [result]: any = await pool.query(`INSERT INTO Doctor (id_usuario, nombre, apellido, especialidad, dpi, telefono, correo, activo)
+    const [result]: any = await pool.query(`INSERT INTO Doctor (id_usuario, nombre, apellido, especialidad, dpi, telefono, correo, colegiado, activo)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id_usuario, nombre, apellido, especialidad,dpi,telefono,correo,activo]);
+      [id_usuario, nombre, apellido, especialidad,dpi,telefono,correo,colegiado,activo]);
 
       return new Doctor(
         result.insertId,
@@ -30,6 +31,7 @@ export class DoctorRepository implements IDoctorRepository {
         dpi,
         telefono,
         correo,
+        colegiado,
         activo
       );
   }
@@ -46,6 +48,7 @@ export class DoctorRepository implements IDoctorRepository {
         row.dpi,
         row.telefono,
         row.correcto,
+        row.colegiado,
         row.activo
       )
     );

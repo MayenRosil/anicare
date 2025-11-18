@@ -9,6 +9,7 @@ export interface Doctor {
   dpi: string;
   telefono: string;
   correo: string;
+  colegiado: string;
   activo?: boolean;
 }
 

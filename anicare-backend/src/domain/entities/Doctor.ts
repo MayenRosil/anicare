@@ -9,6 +9,7 @@ export class Doctor {
     public dpi: string,
     public telefono: string,
     public correo: string,
+    public colegiado: string,
     public activo: boolean
   ) {}
 }
