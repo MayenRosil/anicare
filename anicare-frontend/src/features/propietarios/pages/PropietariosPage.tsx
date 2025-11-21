@@ -9,7 +9,12 @@ import {
   obtenerPacientesPorPropietario 
 } from '../services/propietarioService';
 import { crearPaciente } from '../../pacientes/services/pacienteService';
-import { obtenerRazas } from '../../pacientes/services/razaService';
+import { 
+  obtenerRazasPorEspecie, 
+  buscarOCrearRazaPersonalizada,
+  type Raza
+} from '../../pacientes/services/razaService';
+import { obtenerEspecies, type Especie } from '../../pacientes/services/especieService';
 
 interface Propietario {
   id?: number;
@@ -29,18 +34,18 @@ interface Paciente {
   sexo: 'M' | 'F';
   fecha_nacimiento: string;
   color: string;
+  castrado?: boolean;
+  adoptado?: boolean;
+  fecha_adopcion?: string;
+  edad_aproximada?: boolean;
   nombre_raza?: string;
   nombre_especie?: string;
-}
-
-interface Raza {
-  id: number;
-  nombre: string;
 }
 
 export default function PropietariosPage() {
   const navigate = useNavigate();
   const [propietarios, setPropietarios] = useState<Propietario[]>([]);
+  const [especies, setEspecies] = useState<Especie[]>([]);
   const [razas, setRazas] = useState<Raza[]>([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
@@ -64,13 +69,24 @@ export default function PropietariosPage() {
     correo: ''
   });
 
+  // Estados para el formulario de paciente
   const [formPaciente, setFormPaciente] = useState({
     nombre: '',
     sexo: 'M' as 'M' | 'F',
     color: '',
     fecha_nacimiento: '',
-    id_raza: 0
+    id_raza: 0,
+    castrado: false,
+    adoptado: false,
+    fecha_adopcion: '',
+    edad_aproximada: false
   });
+
+  // Estados para la lógica de especies dinámicas
+  const [especieSeleccionada, setEspecieSeleccionada] = useState<number>(1); // 1=Canino por defecto
+  const [especiePersonalizada, setEspeciePersonalizada] = useState('');
+  const [razaPersonalizada, setRazaPersonalizada] = useState('');
+  const [mostrarInputEspecieOtra, setMostrarInputEspecieOtra] = useState(false);
 
   useEffect(() => {
     cargarDatos();
@@ -79,9 +95,9 @@ export default function PropietariosPage() {
   const cargarDatos = async () => {
     try {
       setLoading(true);
-      const [props, razs] = await Promise.all([
+      const [props, esps] = await Promise.all([
         obtenerPropietarios(),
-        obtenerRazas()
+        obtenerEspecies()
       ]);
       
       // Cargar pacientes para cada propietario
@@ -93,7 +109,11 @@ export default function PropietariosPage() {
       );
       
       setPropietarios(propsConPacientes);
-      setRazas(razs);
+      setEspecies(esps);
+
+      // Cargar razas caninas por defecto
+      const razasCaninas = await obtenerRazasPorEspecie(1);
+      setRazas(razasCaninas);
     } catch (error) {
       console.error(error);
       alert('Error al cargar datos');
@@ -175,15 +195,31 @@ export default function PropietariosPage() {
   };
 
   // Funciones para modal de paciente
-  const abrirModalAgregarPaciente = (idPropietario: number) => {
+  const abrirModalAgregarPaciente = async (idPropietario: number) => {
     setPropietarioSeleccionado(idPropietario);
+    
+    // Resetear estados
+    setEspecieSeleccionada(1); // Canino por defecto
+    setEspeciePersonalizada('');
+    setRazaPersonalizada('');
+    setMostrarInputEspecieOtra(false);
+    
+    // Cargar razas caninas por defecto
+    const razasCaninas = await obtenerRazasPorEspecie(1);
+    setRazas(razasCaninas);
+    
     setFormPaciente({
       nombre: '',
       sexo: 'M',
       color: '',
       fecha_nacimiento: '',
-      id_raza: 0
+      id_raza: razasCaninas[0]?.id || 0,
+      castrado: false,
+      adoptado: false,
+      fecha_adopcion: '',
+      edad_aproximada: false
     });
+    
     setMostrarModalPaciente(true);
   };
 
@@ -193,23 +229,80 @@ export default function PropietariosPage() {
   };
 
   const handlePacienteInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormPaciente(prev => ({ ...prev, [name]: value }));
+    const { name, value, type } = e.target;
+    
+    if (type === 'checkbox') {
+      const checked = (e.target as HTMLInputElement).checked;
+      setFormPaciente(prev => ({ ...prev, [name]: checked }));
+      
+      // Si desactiva "adoptado", limpiar fecha de adopción
+      if (name === 'adoptado' && !checked) {
+        setFormPaciente(prev => ({ ...prev, fecha_adopcion: '' }));
+      }
+    } else {
+      setFormPaciente(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
+  // Manejar cambio de especie
+  const handleEspecieChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const especieId = parseInt(e.target.value);
+    setEspecieSeleccionada(especieId);
+    
+    if (especieId === 3) {
+      // Especie "Otro" - mostrar input personalizado
+      setMostrarInputEspecieOtra(true);
+      setRazas([]);
+    } else {
+      // Canino o Felino - cargar razas correspondientes
+      setMostrarInputEspecieOtra(false);
+      setEspeciePersonalizada('');
+      const razasDeEspecie = await obtenerRazasPorEspecie(especieId);
+      setRazas(razasDeEspecie);
+      setFormPaciente(prev => ({ 
+        ...prev, 
+        id_raza: razasDeEspecie[0]?.id || 0 
+      }));
+    }
   };
 
   const handleSubmitPaciente = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formPaciente.nombre || !formPaciente.fecha_nacimiento || !formPaciente.id_raza) {
+    // Validaciones
+    if (!formPaciente.nombre || !formPaciente.fecha_nacimiento) {
       alert('Por favor completa todos los campos obligatorios');
       return;
     }
 
+    // Si está adoptado, validar fecha de adopción
+    if (formPaciente.adoptado && !formPaciente.fecha_adopcion) {
+      alert('Por favor ingresa la fecha de adopción');
+      return;
+    }
+
     try {
+      let idRazaFinal = formPaciente.id_raza;
+
+      // Si es especie "Otro", crear especie y raza personalizada
+      if (especieSeleccionada === 3) {
+        if (!especiePersonalizada.trim() || !razaPersonalizada.trim()) {
+          alert('Por favor ingresa el nombre de la especie y la raza');
+          return;
+        }
+
+        const result = await buscarOCrearRazaPersonalizada(
+          razaPersonalizada,
+          especiePersonalizada
+        );
+        idRazaFinal = result.id;
+      }
+
+      // Crear el paciente
       await crearPaciente({
         ...formPaciente,
-        id_propietario: propietarioSeleccionado!,
-        id_raza: parseInt(formPaciente.id_raza.toString())
+        id_raza: idRazaFinal,
+        id_propietario: propietarioSeleccionado!
       });
 
       alert('Paciente agregado exitosamente');
@@ -222,53 +315,33 @@ export default function PropietariosPage() {
   };
 
   const propietariosFiltrados = propietarios.filter(prop =>
-    prop.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-    prop.apellido.toLowerCase().includes(busqueda.toLowerCase()) ||
-    prop.dpi.includes(busqueda) ||
-    prop.telefono.includes(busqueda)
+    `${prop.nombre} ${prop.apellido}`.toLowerCase().includes(busqueda.toLowerCase())
   );
 
   if (loading) {
     return (
-      <div className="container mt-4">
-        <div className="text-center">
-          <div className="spinner-border text-success" role="status">
-            <span className="visually-hidden">Cargando...</span>
-          </div>
-          <p className="mt-2">Cargando propietarios...</p>
+      <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Cargando...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mt-4">
-      {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h3 className="text-success mb-1">
+    <div className="container-fluid py-4">
+      <div className="row mb-4">
+        <div className="col">
+          <h2>
             <i className="bi bi-people-fill me-2"></i>
             Propietarios
-          </h3>
-          <p className="text-muted mb-0">
-            {propietarios.length} propietario{propietarios.length !== 1 ? 's' : ''} registrado{propietarios.length !== 1 ? 's' : ''}
-          </p>
-        </div>
-        <div>
-          <button className="btn btn-outline-secondary me-2" onClick={() => navigate('/dashboard')}>
-            <i className="bi bi-arrow-left me-2"></i>
-            Volver al Dashboard
-          </button>
-          <button className="btn btn-success" onClick={abrirModalNuevo}>
-            <i className="bi bi-plus-circle me-2"></i>
-            Nuevo Propietario
-          </button>
+          </h2>
         </div>
       </div>
 
-      {/* Barra de búsqueda */}
-      <div className="card mb-4">
-        <div className="card-body">
+      {/* Barra de búsqueda y botón */}
+      <div className="row mb-3">
+        <div className="col-md-8">
           <div className="input-group">
             <span className="input-group-text">
               <i className="bi bi-search"></i>
@@ -276,33 +349,39 @@ export default function PropietariosPage() {
             <input
               type="text"
               className="form-control"
-              placeholder="Buscar por nombre, apellido, DPI o teléfono..."
+              placeholder="Buscar por nombre..."
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
             />
           </div>
         </div>
+        <div className="col-md-4 text-end">
+          <button className="btn btn-primary" onClick={abrirModalNuevo}>
+            <i className="bi bi-plus-circle-fill me-2"></i>
+            Nuevo Propietario
+          </button>
+        </div>
       </div>
 
-      {/* Tabla de Propietarios */}
-      {propietariosFiltrados.length === 0 ? (
+      {/* Tabla de propietarios */}
+      {propietarios.length === 0 ? (
         <div className="alert alert-info">
           <i className="bi bi-info-circle me-2"></i>
-          No hay propietarios registrados{busqueda && ' que coincidan con la búsqueda'}.
+          No hay propietarios registrados
         </div>
       ) : (
         <div className="card">
           <div className="card-body">
             <div className="table-responsive">
-              <table className="table table-hover align-middle">
-                <thead className="table-light">
+              <table className="table table-hover">
+                <thead>
                   <tr>
                     <th>#</th>
                     <th>Nombre</th>
                     <th>DPI</th>
                     <th>Teléfono</th>
                     <th>Correo</th>
-                    <th>Paciente(s)</th>
+                    <th>Pacientes</th>
                     <th className="text-center">Acciones</th>
                   </tr>
                 </thead>
@@ -317,38 +396,34 @@ export default function PropietariosPage() {
                       <td>{prop.telefono}</td>
                       <td>{prop.correo}</td>
                       <td>
-                        {/* Columna de Pacientes */}
                         {prop.pacientes && prop.pacientes.length > 0 ? (
-                          prop.pacientes.map((pac) => (
-                            <div key={pac.id} className="mb-1">
-                              <span className="me-2">{pac.nombre}</span>
-                              <button
-                                className="btn btn-sm btn-outline-info"
-                                onClick={() => navigate(`/paciente/${pac.id}/historial`)}
-                              >
-                                <i className="bi bi-file-medical-fill"></i> Historial
-                              </button>
-                            </div>
-                          ))
+                          <ul className="list-unstyled mb-0">
+                            {prop.pacientes.map(pac => (
+                              <li key={pac.id}>
+                                <i className="bi bi-circle-fill text-primary me-2" style={{ fontSize: '0.5rem' }}></i>
+                                {pac.nombre} ({pac.nombre_especie})
+                              </li>
+                            ))}
+                          </ul>
                         ) : (
-                          <span className="text-muted fst-italic">Sin pacientes</span>
+                          <span className="text-muted">Sin pacientes</span>
                         )}
                       </td>
                       <td className="text-center">
                         <button
-                          className="btn btn-sm btn-outline-success me-2"
+                          className="btn btn-sm btn-success me-2 mb-1"
                           onClick={() => abrirModalAgregarPaciente(prop.id!)}
                         >
                           <i className="bi bi-plus-circle-fill"></i> Agregar paciente
                         </button>
                         <button
-                          className="btn btn-sm btn-outline-primary me-2"
+                          className="btn btn-sm btn-outline-primary me-2 mb-1"
                           onClick={() => abrirModalEditar(prop)}
                         >
                           <i className="bi bi-pencil-fill"></i> Editar
                         </button>
                         <button
-                          className="btn btn-sm btn-outline-danger"
+                          className="btn btn-sm btn-outline-danger mb-1"
                           onClick={() => handleEliminar(prop.id!, `${prop.nombre} ${prop.apellido}`)}
                         >
                           <i className="bi bi-trash-fill"></i> Eliminar
@@ -420,6 +495,7 @@ export default function PropietariosPage() {
                         name="dpi"
                         value={formData.dpi}
                         onChange={handleInputChange}
+                        maxLength={13}
                         required
                       />
                     </div>
@@ -452,7 +528,7 @@ export default function PropietariosPage() {
                     <div className="col-md-6 mb-3">
                       <label className="form-label">Teléfono *</label>
                       <input
-                        type="text"
+                        type="tel"
                         className="form-control"
                         name="telefono"
                         value={formData.telefono}
@@ -477,8 +553,7 @@ export default function PropietariosPage() {
                   <button type="button" className="btn btn-secondary" onClick={cerrarModal}>
                     Cancelar
                   </button>
-                  <button type="submit" className="btn btn-success">
-                    <i className="bi bi-check-circle me-2"></i>
+                  <button type="submit" className="btn btn-primary">
                     {modoEdicion ? 'Actualizar' : 'Guardar'}
                   </button>
                 </div>
@@ -488,20 +563,18 @@ export default function PropietariosPage() {
         </div>
       )}
 
-      {/* Modal para agregar paciente */}
+      {/* 🎨 Modal NUEVO PACIENTE - DISEÑO EXACTO A PacientesPage */}
       {mostrarModalPaciente && (
         <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <div className="modal-dialog modal-dialog-centered modal-lg">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">
-                  <i className="bi bi-plus-circle me-2"></i>
-                  Agregar Paciente
-                </h5>
+                <h5 className="modal-title">Nuevo Paciente</h5>
                 <button type="button" className="btn-close" onClick={cerrarModalPaciente}></button>
               </div>
               <form onSubmit={handleSubmitPaciente}>
                 <div className="modal-body">
+                  {/* Alerta con propietario preseleccionado */}
                   <div className="alert alert-info">
                     <i className="bi bi-info-circle me-2"></i>
                     <small>
@@ -511,6 +584,7 @@ export default function PropietariosPage() {
                     </small>
                   </div>
 
+                  {/* Nombre del Paciente y Propietario deshabilitado */}
                   <div className="row">
                     <div className="col-md-6 mb-3">
                       <label className="form-label">Nombre del Paciente *</label>
@@ -524,22 +598,81 @@ export default function PropietariosPage() {
                       />
                     </div>
                     <div className="col-md-6 mb-3">
-                      <label className="form-label">Raza *</label>
-                      <select
-                        className="form-select"
-                        name="id_raza"
-                        value={formPaciente.id_raza}
-                        onChange={handlePacienteInputChange}
-                        required
-                      >
-                        <option value={0}>Seleccione una raza</option>
-                        {razas.map(r => (
-                          <option key={r.id} value={r.id}>{r.nombre}</option>
-                        ))}
+                      <label className="form-label">Propietario *</label>
+                      <select className="form-select" disabled style={{ backgroundColor: '#e9ecef' }}>
+                        <option>
+                          {propietarios.find(p => p.id === propietarioSeleccionado)?.nombre}{' '}
+                          {propietarios.find(p => p.id === propietarioSeleccionado)?.apellido}
+                        </option>
                       </select>
                     </div>
                   </div>
 
+                  {/* Especie y Raza */}
+                  <div className="row">
+                    <div className="col-md-6 mb-3">
+                      <label className="form-label">Especie *</label>
+                      <select
+                        className="form-select"
+                        value={especieSeleccionada}
+                        onChange={handleEspecieChange}
+                        required
+                      >
+                        <option value="">Seleccione una especie</option>
+                        {especies.map(esp => (
+                          <option key={esp.id} value={esp.id}>
+                            {esp.nombre}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="col-md-6 mb-3">
+                      <label className="form-label">Raza *</label>
+                      {mostrarInputEspecieOtra ? (
+                        <input
+                          type="text"
+                          className="form-control"
+                          placeholder="Escriba el nombre de la raza"
+                          value={razaPersonalizada}
+                          onChange={(e) => setRazaPersonalizada(e.target.value)}
+                          required
+                        />
+                      ) : (
+                        <select
+                          className="form-select"
+                          name="id_raza"
+                          value={formPaciente.id_raza}
+                          onChange={handlePacienteInputChange}
+                          required
+                        >
+                          <option value="">Seleccione una raza</option>
+                          {razas.map(raza => (
+                            <option key={raza.id} value={raza.id}>
+                              {raza.nombre}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Input de especie personalizada (solo si es "Otro") */}
+                  {mostrarInputEspecieOtra && (
+                    <div className="mb-3">
+                      <label className="form-label">Nombre de la Especie *</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Ej: Ave, Reptil, Roedor, etc."
+                        value={especiePersonalizada}
+                        onChange={(e) => setEspeciePersonalizada(e.target.value)}
+                        required={mostrarInputEspecieOtra}
+                      />
+                    </div>
+                  )}
+
+                  {/* Sexo y Castrado */}
                   <div className="row">
                     <div className="col-md-6 mb-3">
                       <label className="form-label">Sexo *</label>
@@ -554,38 +687,108 @@ export default function PropietariosPage() {
                         <option value="F">Hembra</option>
                       </select>
                     </div>
+
                     <div className="col-md-6 mb-3">
-                      <label className="form-label">Fecha de Nacimiento *</label>
-                      <input
-                        type="date"
-                        className="form-control"
-                        name="fecha_nacimiento"
-                        value={formPaciente.fecha_nacimiento}
-                        onChange={handlePacienteInputChange}
-                        required
-                      />
+                      <label className="form-label">Castrado</label>
+                      <div className="form-check form-switch">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          id="castrado"
+                          name="castrado"
+                          checked={formPaciente.castrado}
+                          onChange={handlePacienteInputChange}
+                        />
+                        <label className="form-check-label" htmlFor="castrado">
+                          {formPaciente.castrado ? 'Sí' : 'No'}
+                        </label>
+                      </div>
                     </div>
                   </div>
 
+                  {/* Fecha de Nacimiento con nota */}
                   <div className="mb-3">
-                    <label className="form-label">Color</label>
+                    <label className="form-label">Fecha de Nacimiento *</label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      name="fecha_nacimiento"
+                      value={formPaciente.fecha_nacimiento}
+                      onChange={handlePacienteInputChange}
+                      required
+                    />
+                    <small className="text-muted d-block mt-1">
+                      Si no conoce la fecha exacta, ingrese una aproximada
+                    </small>
+                    <div className="form-check mt-2">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="edad_aproximada"
+                        name="edad_aproximada"
+                        checked={formPaciente.edad_aproximada}
+                        onChange={handlePacienteInputChange}
+                      />
+                      <label className="form-check-label" htmlFor="edad_aproximada">
+                        Edad aproximada
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Adoptado */}
+                  <div className="mb-3">
+                    <label className="form-label">Adoptado</label>
+                    <div className="form-check form-switch">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="adoptado"
+                        name="adoptado"
+                        checked={formPaciente.adoptado}
+                        onChange={handlePacienteInputChange}
+                      />
+                      <label className="form-check-label" htmlFor="adoptado">
+                        {formPaciente.adoptado ? 'Sí' : 'No'}
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Fecha de Adopción (condicional) */}
+                  {formPaciente.adoptado && (
+                    <div className="mb-3">
+                      <label className="form-label">Fecha de Adopción *</label>
+                      <input
+                        type="date"
+                        className="form-control"
+                        name="fecha_adopcion"
+                        value={formPaciente.fecha_adopcion}
+                        onChange={handlePacienteInputChange}
+                        required={formPaciente.adoptado}
+                      />
+                    </div>
+                  )}
+
+                  {/* Color del Manto */}
+                  <div className="mb-3">
+                    <label className="form-label">Color del Manto *</label>
                     <input
                       type="text"
                       className="form-control"
                       name="color"
+                      placeholder="Ej: Blanco, Negro, Café, etc."
                       value={formPaciente.color}
                       onChange={handlePacienteInputChange}
-                      placeholder="Opcional"
+                      required
                     />
                   </div>
                 </div>
+
                 <div className="modal-footer">
                   <button type="button" className="btn btn-secondary" onClick={cerrarModalPaciente}>
                     Cancelar
                   </button>
-                  <button type="submit" className="btn btn-success">
-                    <i className="bi bi-check-circle me-2"></i>
-                    Guardar Paciente
+                  <button type="submit" className="btn btn-primary">
+                    Guardar
                   </button>
                 </div>
               </form>
