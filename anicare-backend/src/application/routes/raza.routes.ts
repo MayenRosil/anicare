@@ -9,6 +9,7 @@ router.post('/razas', verifyToken, RazaController.crear);
 router.get('/razas', verifyToken, RazaController.listarTodos);
 router.get('/razas/:id', verifyToken, RazaController.obtenerPorId);
 router.get('/razas/especie/:idEspecie', verifyToken, RazaController.obtenerPorEspecie);
+router.post('/razas/personalizada', verifyToken, RazaController.buscarOCrearPersonalizada); // 🆕 NUEVO
 router.put('/razas/:id', verifyToken, RazaController.actualizar);
 router.delete('/razas/:id', verifyToken, RazaController.eliminar);
 

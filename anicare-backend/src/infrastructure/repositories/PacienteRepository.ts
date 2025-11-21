@@ -1,4 +1,4 @@
-
+// src/infrastructure/repositories/PacienteRepository.ts
 import { IPacienteRepository } from '../../domain/interfaces/IPacienteRepository';
 import { Paciente } from '../../domain/entities/Paciente';
 import pool from '../../shared/config/db';
@@ -11,13 +11,23 @@ export class PacienteRepository implements IPacienteRepository {
       nombre,
       sexo,
       fecha_nacimiento,
-      color
+      color,
+      castrado = false,
+      adoptado = false,
+      fecha_adopcion = null,
+      edad_aproximada = false
     } = data;
 
     const [result]: any = await pool.query(
-      `INSERT INTO Paciente (id_propietario, id_raza, nombre, sexo, fecha_nacimiento, color)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [id_propietario, id_raza, nombre, sexo, fecha_nacimiento, color]
+      `INSERT INTO Paciente (
+        id_propietario, id_raza, nombre, sexo, fecha_nacimiento, color,
+        castrado, adoptado, fecha_adopcion, edad_aproximada
+      )
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        id_propietario, id_raza, nombre, sexo, fecha_nacimiento, color,
+        castrado, adoptado, fecha_adopcion, edad_aproximada
+      ]
     );
 
     return new Paciente(
@@ -27,27 +37,43 @@ export class PacienteRepository implements IPacienteRepository {
       nombre,
       sexo,
       fecha_nacimiento,
-      color
+      color,
+      castrado,
+      adoptado,
+      fecha_adopcion,
+      edad_aproximada
     );
   }
 
-async obtenerTodos(): Promise<Paciente[]> {
-  const [rows]: any = await pool.query(`
-    SELECT 
-      p.*,
-      CONCAT(prop.nombre, ' ', prop.apellido) as nombre_propietario,
-      r.nombre as nombre_raza,
-      e.nombre as nombre_especie
-    FROM Paciente p
-    LEFT JOIN Propietario prop ON p.id_propietario = prop.id
-    LEFT JOIN Raza r ON p.id_raza = r.id
-    LEFT JOIN Especie e ON r.id_especie = e.id
-  `);
-  return rows;
-}
+  async obtenerTodos(): Promise<Paciente[]> {
+    const [rows]: any = await pool.query(`
+      SELECT 
+        p.*,
+        CONCAT(prop.nombre, ' ', prop.apellido) as nombre_propietario,
+        r.nombre as nombre_raza,
+        e.nombre as nombre_especie
+      FROM Paciente p
+      LEFT JOIN Propietario prop ON p.id_propietario = prop.id
+      LEFT JOIN Raza r ON p.id_raza = r.id
+      LEFT JOIN Especie e ON r.id_especie = e.id
+    `);
+    return rows;
+  }
 
   async obtenerPorId(id: number): Promise<Paciente | null> {
-    const [rows]: any = await pool.query('SELECT * FROM Paciente WHERE id = ?', [id]);
+    const [rows]: any = await pool.query(`
+      SELECT 
+        p.*,
+        CONCAT(prop.nombre, ' ', prop.apellido) as nombre_propietario,
+        r.nombre as nombre_raza,
+        e.nombre as nombre_especie
+      FROM Paciente p
+      LEFT JOIN Propietario prop ON p.id_propietario = prop.id
+      LEFT JOIN Raza r ON p.id_raza = r.id
+      LEFT JOIN Especie e ON r.id_especie = e.id
+      WHERE p.id = ?
+    `, [id]);
+    
     const row = rows[0];
     if (!row) return null;
 
@@ -58,12 +84,29 @@ async obtenerTodos(): Promise<Paciente[]> {
       row.nombre,
       row.sexo,
       row.fecha_nacimiento,
-      row.color
+      row.color,
+      row.castrado,
+      row.adoptado,
+      row.fecha_adopcion,
+      row.edad_aproximada,
+      row.nombre_propietario,
+      row.nombre_raza,
+      row.nombre_especie
     );
   }
 
   async obtenerPorPropietario(id_propietario: number): Promise<Paciente[]> {
-    const [rows]: any = await pool.query('SELECT * FROM Paciente WHERE id_propietario = ?', [id_propietario]);
+    const [rows]: any = await pool.query(`
+      SELECT 
+        p.*,
+        r.nombre as nombre_raza,
+        e.nombre as nombre_especie
+      FROM Paciente p
+      LEFT JOIN Raza r ON p.id_raza = r.id
+      LEFT JOIN Especie e ON r.id_especie = e.id
+      WHERE p.id_propietario = ?
+    `, [id_propietario]);
+    
     return rows.map((row: any) =>
       new Paciente(
         row.id,
@@ -72,12 +115,19 @@ async obtenerTodos(): Promise<Paciente[]> {
         row.nombre,
         row.sexo,
         row.fecha_nacimiento,
-        row.color
+        row.color,
+        row.castrado,
+        row.adoptado,
+        row.fecha_adopcion,
+        row.edad_aproximada,
+        undefined,
+        row.nombre_raza,
+        row.nombre_especie
       )
     );
   }
 
-    // 🆕 Actualizar
+  // 🆕 Actualizar - INCLUYE NUEVOS CAMPOS
   async actualizar(id: number, data: Partial<Paciente>): Promise<void> {
     const campos = [];
     const valores: any[] = [];
@@ -106,6 +156,23 @@ async obtenerTodos(): Promise<Paciente[]> {
       campos.push('id_propietario = ?');
       valores.push(data.id_propietario);
     }
+    // 🆕 NUEVOS CAMPOS
+    if (data.castrado !== undefined) {
+      campos.push('castrado = ?');
+      valores.push(data.castrado);
+    }
+    if (data.adoptado !== undefined) {
+      campos.push('adoptado = ?');
+      valores.push(data.adoptado);
+    }
+    if (data.fecha_adopcion !== undefined) {
+      campos.push('fecha_adopcion = ?');
+      valores.push(data.fecha_adopcion);
+    }
+    if (data.edad_aproximada !== undefined) {
+      campos.push('edad_aproximada = ?');
+      valores.push(data.edad_aproximada);
+    }
 
     if (campos.length === 0) return;
 
@@ -120,6 +187,4 @@ async obtenerTodos(): Promise<Paciente[]> {
   async eliminar(id: number): Promise<void> {
     await pool.query('DELETE FROM Paciente WHERE id = ?', [id]);
   }
-
-
 }

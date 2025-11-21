@@ -1,68 +1,82 @@
 // anicare-frontend/src/features/pacientes/pages/PacientesPage.tsx
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { obtenerPacientes, crearPaciente, actualizarPaciente, eliminarPaciente } from '../services/pacienteService';
-import { obtenerRazas } from '../services/razaService';
-import { obtenerPropietarios } from '../services/propietarioService';
-
-interface Paciente {
-  id?: number;
-  id_propietario: number;
-  id_raza: number;
-  nombre: string;
-  sexo: 'M' | 'F';
-  fecha_nacimiento: string;
-  color: string;
-  nombre_propietario?: string;
-  nombre_raza?: string;
-}
-
-interface Raza {
-  id: number;
-  nombre: string;
-}
-
-interface Propietario {
-  id: number;
-  nombre: string;
-  apellido: string;
-}
+import {
+  obtenerPacientes,
+  crearPaciente,
+  actualizarPaciente,
+  eliminarPaciente,
+  type Paciente
+} from '../services/pacienteService';
+import { obtenerPropietarios, type Propietario } from '../../propietarios/services/propietarioService';
+import { 
+  obtenerRazasPorEspecie, 
+  buscarOCrearRazaPersonalizada,
+  type Raza, 
+  obtenerRazaPorId
+} from '../services/razaService';
+import { obtenerEspecies, type Especie } from '../services/especieService';
 
 export default function PacientesPage() {
   const navigate = useNavigate();
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
-  const [razas, setRazas] = useState<Raza[]>([]);
   const [propietarios, setPropietarios] = useState<Propietario[]>([]);
+  const [especies, setEspecies] = useState<Especie[]>([]);
+  const [razas, setRazas] = useState<Raza[]>([]);
   const [loading, setLoading] = useState(true);
+  const [busqueda, setBusqueda] = useState('');
+  
+  // Estados para modal
   const [mostrarModal, setMostrarModal] = useState(false);
   const [modoEdicion, setModoEdicion] = useState(false);
   const [pacienteEditar, setPacienteEditar] = useState<Paciente | null>(null);
-  const [busqueda, setBusqueda] = useState('');
 
+  // Estados para el formulario
   const [formData, setFormData] = useState({
     nombre: '',
     sexo: 'M' as 'M' | 'F',
     color: '',
     fecha_nacimiento: '',
     id_raza: 0,
-    id_propietario: 0
+    id_propietario: 0,
+    castrado: false,
+    adoptado: false,
+    fecha_adopcion: '',
+    edad_aproximada: false
   });
+
+  // Estados para la lógica de especies
+  const [especieSeleccionada, setEspecieSeleccionada] = useState<number>(1); // 1=Canino por defecto
+  const [especiePersonalizada, setEspeciePersonalizada] = useState('');
+  const [razaPersonalizada, setRazaPersonalizada] = useState('');
+  const [modoEscribirRaza, setModoEscribirRaza] = useState(false); // Solo para especie "Otro"
 
   useEffect(() => {
     cargarDatos();
   }, []);
 
+  useEffect(() => {
+    // Cuando cambia la especie seleccionada, cargar las razas correspondientes
+    if (especieSeleccionada > 0) {
+      cargarRazasPorEspecie(especieSeleccionada);
+    }
+  }, [especieSeleccionada]);
+
   const cargarDatos = async () => {
     try {
       setLoading(true);
-      const [pac, props, raz] = await Promise.all([
+      const [pacs, props, esps] = await Promise.all([
         obtenerPacientes(),
         obtenerPropietarios(),
-        obtenerRazas()
+        obtenerEspecies()
       ]);
-      setPacientes(pac);
+      setPacientes(pacs);
       setPropietarios(props);
-      setRazas(raz);
+      setEspecies(esps);
+      
+      // Cargar razas de Canino por defecto
+      const razasCanino = await obtenerRazasPorEspecie(1);
+      setRazas(razasCanino);
     } catch (error) {
       console.error(error);
       alert('Error al cargar datos');
@@ -71,33 +85,87 @@ export default function PacientesPage() {
     }
   };
 
+  const cargarRazasPorEspecie = async (idEspecie: number) => {
+    try {
+      const razasPorEspecie = await obtenerRazasPorEspecie(idEspecie);
+      setRazas(razasPorEspecie);
+      
+      // Si hay razas, seleccionar la primera por defecto
+      if (razasPorEspecie.length > 0 && !modoEdicion) {
+        setFormData(prev => ({ ...prev, id_raza: razasPorEspecie[0].id }));
+      }
+    } catch (error) {
+      console.error('Error al cargar razas:', error);
+      setRazas([]);
+    }
+  };
+
   const abrirModalNuevo = () => {
     setModoEdicion(false);
     setPacienteEditar(null);
+    setEspecieSeleccionada(1); // Canino por defecto
+    setEspeciePersonalizada('');
+    setRazaPersonalizada('');
+    setModoEscribirRaza(false);
     setFormData({
       nombre: '',
       sexo: 'M',
       color: '',
       fecha_nacimiento: '',
       id_raza: razas[0]?.id || 0,
-      id_propietario: propietarios[0]?.id || 0
+      id_propietario: propietarios[0]?.id || 0,
+      castrado: false,
+      adoptado: false,
+      fecha_adopcion: '',
+      edad_aproximada: false
     });
     setMostrarModal(true);
   };
 
-  const abrirModalEditar = (paciente: Paciente) => {
+const abrirModalEditar = async (paciente: Paciente) => {
+  try {
     setModoEdicion(true);
     setPacienteEditar(paciente);
+    
+    // 🔥 CORRECCIÓN: Obtener la raza completa desde el backend
+    const razaCompleta = await obtenerRazaPorId(paciente.id_raza);
+    const idEspecie = razaCompleta.id_especie;
+    
+    console.log('Raza del paciente:', razaCompleta);
+    console.log('ID Especie:', idEspecie);
+    
+    // Establecer la especie seleccionada
+    setEspecieSeleccionada(idEspecie);
+    
+    // Cargar las razas de esa especie
+    const razasDeEspecie = await obtenerRazasPorEspecie(idEspecie);
+    setRazas(razasDeEspecie);
+    
+    // Si es especie "Otro" y tiene especie personalizada, llenar el campo
+    if (idEspecie === 3 && razaCompleta.especie_personalizada) {
+      setEspeciePersonalizada(razaCompleta.especie_personalizada);
+    }
+    
+    // Llenar el formulario con los datos del paciente
     setFormData({
       nombre: paciente.nombre,
       sexo: paciente.sexo,
       color: paciente.color,
       fecha_nacimiento: paciente.fecha_nacimiento,
       id_raza: paciente.id_raza,
-      id_propietario: paciente.id_propietario
+      id_propietario: paciente.id_propietario,
+      castrado: paciente.castrado || false,
+      adoptado: paciente.adoptado || false,
+      fecha_adopcion: paciente.fecha_adopcion || '',
+      edad_aproximada: paciente.edad_aproximada || false
     });
+    
     setMostrarModal(true);
-  };
+  } catch (error) {
+    console.error('Error al cargar datos del paciente:', error);
+    alert('Error al cargar los datos del paciente para editar');
+  }
+};
 
   const cerrarModal = () => {
     setMostrarModal(false);
@@ -107,27 +175,69 @@ export default function PacientesPage() {
       color: '',
       fecha_nacimiento: '',
       id_raza: 0,
-      id_propietario: 0
+      id_propietario: 0,
+      castrado: false,
+      adoptado: false,
+      fecha_adopcion: '',
+      edad_aproximada: false
     });
     setPacienteEditar(null);
+    setEspecieSeleccionada(1);
+    setEspeciePersonalizada('');
+    setRazaPersonalizada('');
+    setModoEscribirRaza(false);
+  };
+
+  const handleEspecieChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const nuevaEspecie = parseInt(e.target.value);
+    setEspecieSeleccionada(nuevaEspecie);
+    setEspeciePersonalizada('');
+    setRazaPersonalizada('');
+    setModoEscribirRaza(nuevaEspecie === 3); // Solo permitir escribir si es "Otro"
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.nombre.trim() || !formData.id_raza || !formData.id_propietario) {
-      alert('El nombre, raza y propietario son obligatorios');
+    if (!formData.nombre.trim() || !formData.id_propietario) {
+      alert('El nombre y propietario son obligatorios');
       return;
     }
 
     try {
+      let idRazaFinal = formData.id_raza;
+
+      // Si es especie "Otro" y está escribiendo una raza nueva, crearla
+      if (especieSeleccionada === 3 && modoEscribirRaza && razaPersonalizada.trim()) {
+        if (!especiePersonalizada.trim()) {
+          alert('Por favor especifica el tipo de animal en "Especie Personalizada"');
+          return;
+        }
+        
+        const resultado = await buscarOCrearRazaPersonalizada(
+          razaPersonalizada.trim(),
+          especiePersonalizada.trim()
+        );
+        idRazaFinal = resultado.id;
+      } else if (!idRazaFinal || idRazaFinal === 0) {
+        alert('Por favor selecciona una raza');
+        return;
+      }
+
+      const datosAGuardar = {
+        ...formData,
+        id_raza: idRazaFinal,
+        fecha_adopcion: formData.adoptado && formData.fecha_adopcion ? formData.fecha_adopcion : null
+      };
+
       if (modoEdicion && pacienteEditar) {
-        await actualizarPaciente(pacienteEditar.id!, formData);
+        await actualizarPaciente(pacienteEditar.id!, datosAGuardar);
         alert('Paciente actualizado exitosamente');
       } else {
-        await crearPaciente(formData);
+        await crearPaciente(datosAGuardar);
         alert('Paciente creado exitosamente');
       }
+      
       cerrarModal();
       cargarDatos();
     } catch (error) {
@@ -154,11 +264,6 @@ export default function PacientesPage() {
     p.nombre_propietario?.toLowerCase().includes(busqueda.toLowerCase())
   );
 
-  const obtenerNombreRaza = (id: number) => {
-    const raza = razas.find(r => r.id === id);
-    return raza?.nombre || `ID: ${id}`;
-  };
-
   const obtenerNombrePropietario = (id: number) => {
     const prop = propietarios.find(p => p.id === id);
     return prop ? `${prop.nombre} ${prop.apellido}` : `ID: ${id}`;
@@ -183,7 +288,7 @@ export default function PacientesPage() {
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h3 className="text-primary mb-1">
-            <i className="bi bi-heart-pulse me-2"></i>
+            <i className="bi bi-heart-pulse-fill me-2"></i>
             Pacientes
           </h3>
           <p className="text-muted mb-0">
@@ -212,7 +317,7 @@ export default function PacientesPage() {
             <input
               type="text"
               className="form-control"
-              placeholder="Buscar por nombre o propietario..."
+              placeholder="Buscar por nombre de paciente o propietario..."
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
             />
@@ -224,42 +329,52 @@ export default function PacientesPage() {
       {pacientesFiltrados.length === 0 ? (
         <div className="alert alert-info">
           <i className="bi bi-info-circle me-2"></i>
-          No hay pacientes registrados{busqueda && ' que coincidan con la búsqueda'}.
+          No se encontraron pacientes.
         </div>
       ) : (
         <div className="card">
           <div className="card-body">
             <div className="table-responsive">
-              <table className="table table-hover align-middle">
+              <table className="table table-hover">
                 <thead className="table-light">
                   <tr>
-                    <th>#</th>
                     <th>Nombre</th>
-                    <th>Sexo</th>
-                    <th>Color</th>
-                    <th>Fecha Nac.</th>
+                    <th>Especie</th>
                     <th>Raza</th>
+                    <th>Sexo</th>
+                    <th>Castrado</th>
                     <th>Propietario</th>
                     <th className="text-center">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {pacientesFiltrados.map((pac, index) => (
+                  {pacientesFiltrados.map(pac => (
                     <tr key={pac.id}>
-                      <td>{index + 1}</td>
                       <td>
                         <strong>{pac.nombre}</strong>
+                        {pac.adoptado && (
+                          <span className="badge bg-info ms-2">Adoptado</span>
+                        )}
                       </td>
+                      <td>{pac.nombre_especie || 'N/A'}</td>
+                      <td>{pac.nombre_raza || 'N/A'}</td>
+                      <td>{pac.sexo === 'M' ? 'Macho' : 'Hembra'}</td>
                       <td>
-                        <span className="badge bg-primary">
-                          {pac.sexo === 'M' ? 'Macho' : 'Hembra'}
-                        </span>
+                        {pac.castrado ? (
+                          <span className="badge bg-success">Sí</span>
+                        ) : (
+                          <span className="badge bg-secondary">No</span>
+                        )}
                       </td>
-                      <td>{pac.color}</td>
-                      <td>{new Date(pac.fecha_nacimiento).toLocaleDateString('es-GT')}</td>
-                      <td>{pac.nombre_raza || obtenerNombreRaza(pac.id_raza)}</td>
                       <td>{pac.nombre_propietario || obtenerNombrePropietario(pac.id_propietario)}</td>
                       <td className="text-center">
+                          <button
+    className="btn btn-sm btn-outline-info me-2"
+    onClick={() => navigate(`/paciente/${pac.id}/historial`)}
+    title="Ver Historial Clínico"
+  >
+    <i className="bi bi-file-medical-fill"></i> Historial
+  </button>
                         <button
                           className="btn btn-sm btn-outline-primary me-2"
                           onClick={() => abrirModalEditar(pac)}
@@ -267,16 +382,10 @@ export default function PacientesPage() {
                           <i className="bi bi-pencil-fill"></i> Editar
                         </button>
                         <button
-                          className="btn btn-sm btn-outline-danger me-2"
+                          className="btn btn-sm btn-outline-danger"
                           onClick={() => handleEliminar(pac.id!, pac.nombre)}
                         >
                           <i className="bi bi-trash-fill"></i> Eliminar
-                        </button>
-                        <button
-                          className="btn btn-sm btn-outline-info"
-                          onClick={() => navigate(`/paciente/${pac.id}/historial`)}
-                        >
-                          <i className="bi bi-file-medical-fill"></i> Historial
                         </button>
                       </td>
                     </tr>
@@ -288,21 +397,32 @@ export default function PacientesPage() {
         </div>
       )}
 
-      {/* Modal para Crear/Editar */}
+      {/* Modal Crear/Editar */}
       {mostrarModal && (
         <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <div className="modal-dialog modal-dialog-centered modal-lg">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">
-                  {modoEdicion ? 'Editar Paciente' : 'Nuevo Paciente'}
+                  {modoEdicion ? (
+                    <>
+                      <i className="bi bi-pencil-fill me-2"></i>
+                      Editar Paciente
+                    </>
+                  ) : (
+                    <>
+                      <i className="bi bi-plus-circle me-2"></i>
+                      Nuevo Paciente
+                    </>
+                  )}
                 </h5>
                 <button type="button" className="btn-close" onClick={cerrarModal}></button>
               </div>
               <form onSubmit={handleSubmit}>
                 <div className="modal-body">
+                  {/* Nombre */}
                   <div className="mb-3">
-                    <label className="form-label">Nombre *</label>
+                    <label className="form-label">Nombre del Paciente *</label>
                     <input
                       type="text"
                       className="form-control"
@@ -311,7 +431,111 @@ export default function PacientesPage() {
                       required
                     />
                   </div>
+
+                  {/* Propietario */}
+                  <div className="mb-3">
+                    <label className="form-label">Propietario *</label>
+                    <select
+                      className="form-select"
+                      value={formData.id_propietario}
+                      onChange={(e) => setFormData({ ...formData, id_propietario: parseInt(e.target.value) })}
+                      required
+                    >
+                      <option value="">Seleccione un propietario</option>
+                      {propietarios.map(prop => (
+                        <option key={prop.id} value={prop.id}>
+                          {prop.nombre} {prop.apellido}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Especie */}
+                  <div className="mb-3">
+                    <label className="form-label">Especie *</label>
+                    <select
+                      className="form-select"
+                      value={especieSeleccionada}
+                      onChange={handleEspecieChange}
+                      required
+                    >
+                      {especies.map(esp => (
+                        <option key={esp.id} value={esp.id}>
+                          {esp.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Si es "Otro", mostrar campo de especie personalizada */}
+                  {especieSeleccionada === 3 && (
+                    <div className="mb-3">
+                      <label className="form-label">Tipo de Animal (Especificar) *</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Ej: Conejo, Ave, Reptil, etc."
+                        value={especiePersonalizada}
+                        onChange={(e) => setEspeciePersonalizada(e.target.value)}
+                        required={especieSeleccionada === 3}
+                      />
+                      <small className="text-muted">
+                        Especifica el tipo de animal (Ave, Reptil, Roedor, etc.)
+                      </small>
+                    </div>
+                  )}
+
+                  {/* Raza */}
+                  <div className="mb-3">
+                    <label className="form-label">Raza *</label>
+                    {especieSeleccionada === 3 && (
+                      <div className="form-check mb-2">
+                        <input
+                          type="checkbox"
+                          className="form-check-input"
+                          id="escribirRaza"
+                          checked={modoEscribirRaza}
+                          onChange={(e) => {
+                            setModoEscribirRaza(e.target.checked);
+                            if (!e.target.checked) {
+                              setRazaPersonalizada('');
+                            }
+                          }}
+                        />
+                        <label className="form-check-label" htmlFor="escribirRaza">
+                          Escribir nueva raza
+                        </label>
+                      </div>
+                    )}
+
+                    {modoEscribirRaza && especieSeleccionada === 3 ? (
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Escriba el nombre de la raza"
+                        value={razaPersonalizada}
+                        onChange={(e) => setRazaPersonalizada(e.target.value)}
+                        required
+                      />
+                    ) : (
+                      <select
+                        className="form-select"
+                        value={formData.id_raza}
+                        onChange={(e) => setFormData({ ...formData, id_raza: parseInt(e.target.value) })}
+                        required={!modoEscribirRaza}
+                      >
+                        <option value="">Seleccione una raza</option>
+                        {razas.map(raza => (
+                          <option key={raza.id} value={raza.id}>
+                            {raza.nombre}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+
                   <div className="row">
+                    {/* Sexo */}
                     <div className="col-md-6 mb-3">
                       <label className="form-label">Sexo *</label>
                       <select
@@ -324,17 +548,26 @@ export default function PacientesPage() {
                         <option value="F">Hembra</option>
                       </select>
                     </div>
+
+                    {/* Castrado */}
                     <div className="col-md-6 mb-3">
-                      <label className="form-label">Color *</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        value={formData.color}
-                        onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                        required
-                      />
+                      <label className="form-label">Castrado</label>
+                      <div className="form-check form-switch">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          id="castrado"
+                          checked={formData.castrado}
+                          onChange={(e) => setFormData({ ...formData, castrado: e.target.checked })}
+                        />
+                        <label className="form-check-label" htmlFor="castrado">
+                          {formData.castrado ? 'Sí' : 'No'}
+                        </label>
+                      </div>
                     </div>
                   </div>
+
+                  {/* Fecha de Nacimiento y Edad Aproximada */}
                   <div className="mb-3">
                     <label className="form-label">Fecha de Nacimiento *</label>
                     <input
@@ -344,36 +577,63 @@ export default function PacientesPage() {
                       onChange={(e) => setFormData({ ...formData, fecha_nacimiento: e.target.value })}
                       required
                     />
+                    <div className="form-check mt-2">
+                      <input
+                        type="checkbox"
+                        className="form-check-input"
+                        id="edadAproximada"
+                        checked={formData.edad_aproximada}
+                        onChange={(e) => setFormData({ ...formData, edad_aproximada: e.target.checked })}
+                      />
+                      <label className="form-check-label" htmlFor="edadAproximada">
+                        <small className="text-muted">
+                          La fecha de nacimiento es aproximada (no se conoce con exactitud)
+                        </small>
+                      </label>
+                    </div>
                   </div>
+
+                  {/* Adoptado */}
                   <div className="mb-3">
-                    <label className="form-label">Raza *</label>
-                    <select
-                      className="form-select"
-                      value={formData.id_raza}
-                      onChange={(e) => setFormData({ ...formData, id_raza: parseInt(e.target.value) })}
-                      required
-                    >
-                      <option value={0}>Seleccionar raza</option>
-                      {razas.map(raza => (
-                        <option key={raza.id} value={raza.id}>{raza.nombre}</option>
-                      ))}
-                    </select>
+                    <label className="form-label">Adoptado</label>
+                    <div className="form-check form-switch">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="adoptado"
+                        checked={formData.adoptado}
+                        onChange={(e) => setFormData({ ...formData, adoptado: e.target.checked })}
+                      />
+                      <label className="form-check-label" htmlFor="adoptado">
+                        {formData.adoptado ? 'Sí' : 'No'}
+                      </label>
+                    </div>
                   </div>
+
+                  {/* Fecha de Adopción (solo si adoptado) */}
+                  {formData.adoptado && (
+                    <div className="mb-3">
+                      <label className="form-label">Fecha de Adopción</label>
+                      <input
+                        type="date"
+                        className="form-control"
+                        value={formData.fecha_adopcion}
+                        onChange={(e) => setFormData({ ...formData, fecha_adopcion: e.target.value })}
+                      />
+                    </div>
+                  )}
+
+                  {/* Color */}
                   <div className="mb-3">
-                    <label className="form-label">Propietario *</label>
-                    <select
-                      className="form-select"
-                      value={formData.id_propietario}
-                      onChange={(e) => setFormData({ ...formData, id_propietario: parseInt(e.target.value) })}
+                    <label className="form-label">Color del Manto *</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Ej: Blanco, Negro, Café, etc."
+                      value={formData.color}
+                      onChange={(e) => setFormData({ ...formData, color: e.target.value })}
                       required
-                    >
-                      <option value={0}>Seleccionar propietario</option>
-                      {propietarios.map(prop => (
-                        <option key={prop.id} value={prop.id}>
-                          {prop.nombre} {prop.apellido}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </div>
                 </div>
                 <div className="modal-footer">
@@ -381,6 +641,7 @@ export default function PacientesPage() {
                     Cancelar
                   </button>
                   <button type="submit" className="btn btn-primary">
+                    <i className="bi bi-check-circle me-2"></i>
                     {modoEdicion ? 'Actualizar' : 'Guardar'}
                   </button>
                 </div>

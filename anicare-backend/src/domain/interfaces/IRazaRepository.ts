@@ -1,4 +1,4 @@
-// anicare-backend/src/domain/interfaces/IRazaRepository.ts
+// src/domain/interfaces/IRazaRepository.ts
 import { Raza } from '../entities/Raza';
 
 export interface IRazaRepository {
@@ -6,6 +6,7 @@ export interface IRazaRepository {
   obtenerTodos(): Promise<any[]>; // Retorna razas con nombre de especie
   obtenerPorId(id: number): Promise<any | null>;
   obtenerPorEspecie(idEspecie: number): Promise<Raza[]>;
+  buscarOCrearRazaPersonalizada(nombreRaza: string, especiePersonalizada: string): Promise<number>; // 🆕
   actualizar(id: number, data: Partial<Omit<Raza, 'id'>>): Promise<void>;
   desactivar(id: number): Promise<void>;
 }
