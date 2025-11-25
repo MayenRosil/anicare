@@ -404,11 +404,23 @@ export default function PropietariosPage() {
                       <td>
                         {prop.pacientes && prop.pacientes.length > 0 ? (
                           <div>
-                            {prop.pacientes.map((pac) => (
-                              <span key={pac.id} className="badge bg-info me-1">
+                          <ul className="list-unstyled mb-0">
+                            {prop.pacientes.map(pac => (
+                              <li key={pac.id}>
+                                <i className="bi bi-circle-fill text-primary me-2" style={{ fontSize: '0.5rem' }}></i>
+                                    <span key={pac.id} className="badge bg-info me-1">
                                 {pac.nombre} ({pac.nombre_especie})
                               </span>
+                                      <button
+                                className="btn btn-sm btn-outline-info"
+                                onClick={() => navigate(`/paciente/${pac.id}/historial`)}
+                              >
+                                <i className="bi bi-file-medical-fill"></i> Historial
+                              </button>
+                              </li>
                             ))}
+                          </ul>
+                          
                           </div>
                         ) : (
                           <span className="text-muted">Sin pacientes</span>
