@@ -36,7 +36,8 @@ interface Cita {
   id_paciente: number | null;
   nombre_paciente?: string;
   id_doctor: number;
-  nombre_doctor?: string;
+  doctor_nombre?: string;
+  doctor_apellido?: string;
   fecha_hora: string;
   estado: string;
   comentario: string;
@@ -131,6 +132,7 @@ export default function CitasPage() {
         });
 
       setEventos(eventosCalendario);
+      console.log(citasData)
       setCitas(citasData);
     } catch (error) {
       console.error('Error al cargar citas:', error);
@@ -149,7 +151,8 @@ export default function CitasPage() {
 
     if (busquedaDoctor.trim()) {
       resultado = resultado.filter(c =>
-        c.nombre_doctor?.toLowerCase().includes(busquedaDoctor.toLowerCase())
+        c.doctor_nombre?.toLowerCase().includes(busquedaDoctor.toLowerCase())
+        || c.doctor_apellido?.toLowerCase().includes(busquedaDoctor.toLowerCase())
       );
     }
 
@@ -535,7 +538,7 @@ export default function CitasPage() {
                             )}
                           </td>
                           <td>{cita.propietario_nombre || 'N/A'}</td>
-                          <td>{cita.nombre_doctor || 'N/A'}</td>
+                          <td>{cita.doctor_nombre + ' ' + cita.doctor_apellido || 'N/A'}</td>
                           <td>{cita.comentario}</td>
                           <td>
                             <span className={`badge ${getBadgeClass(cita.estado)}`}>

@@ -1,8 +1,9 @@
 -- ============================================================================
 -- SCRIPT DE CREACIÓN - BASE DE DATOS ANICARE (ACTUALIZADO)
 -- Fecha: Noviembre 2025
--- Descripción: Esquema completo con mejoras al módulo de pacientes
--- ✨ NUEVO: Soporte para "PACIENTE NUEVO" en citas (id_paciente NULLABLE)
+-- Descripción: Esquema completo con mejoras al módulo de consultas
+-- ✨ NUEVO: Campos clínicos ampliados en Consulta
+-- ✨ CAMBIO: Eliminados campos tipo/estado de DiagnosticoConsulta
 -- ============================================================================
 
 -- Crear la base de datos
@@ -123,7 +124,8 @@ CREATE TABLE Cita (
     FOREIGN KEY (id_usuario_registro) REFERENCES Usuario(id)
 );
 
--- Tabla: Consulta (con signos vitales)
+-- Tabla: Consulta
+-- ✨ NUEVO: Ampliados campos clínicos para examen veterinario completo
 CREATE TABLE Consulta (
     id INT AUTO_INCREMENT PRIMARY KEY,
     id_paciente INT,
@@ -132,12 +134,45 @@ CREATE TABLE Consulta (
     id_cita INT NULL,
     fecha_hora DATETIME NOT NULL,
     estado ENUM('Abierta', 'Finalizada', 'Cancelada') DEFAULT 'Abierta',
+    
+    -- Examen Clínico Básico
+    motivo_consulta TEXT COMMENT 'Motivo de la consulta',
     notas_adicionales TEXT,
-    motivo_consulta TEXT COMMENT 'Motivo de la consulta (copiado del comentario de la cita)',
+    
+    -- Signos Vitales Básicos
     peso DECIMAL(5,2),
     temperatura DECIMAL(4,2),
     frecuencia_cardiaca INT,
     frecuencia_respiratoria INT,
+    
+    -- ✨ NUEVOS CAMPOS: Anamnesis e Historia Clínica
+    anamnesis TEXT COMMENT 'Entorno, ambiente, contexto del paciente',
+    historia_clinica TEXT COMMENT 'Medicamentos actuales, cirugías previas, antecedentes',
+    
+    -- ✨ NUEVOS CAMPOS: Signos Vitales Adicionales
+    pulso_arterial VARCHAR(100) COMMENT 'Ej: Fuerte, regular',
+    tllc VARCHAR(50) COMMENT 'Tiempo de llenado capilar. Ej: < 2 segundos',
+    color_mucosas VARCHAR(100) COMMENT 'Ej: Rosado pálido',
+    
+    -- ✨ NUEVOS CAMPOS: Evaluación General
+    condicion_corporal VARCHAR(50) COMMENT 'BCS (Body Condition Score). Ej: 4/9',
+    estado_hidratacion VARCHAR(100) COMMENT 'Ej: < 2% pérdida',
+    estado_mental VARCHAR(100) COMMENT 'Ej: Alerta, Apático, Estuporoso',
+    
+    -- ✨ NUEVOS CAMPOS: Exploración Respiratoria
+    palmo_percusion_toracica TEXT COMMENT 'Ej: Sonido claro, resonante',
+    auscultacion_pulmonar TEXT COMMENT 'Ej: Sonidos vesiculares normales',
+    
+    -- ✨ NUEVOS CAMPOS: Reflejos Fisiológicos
+    reflejo_tusigeno VARCHAR(100) COMMENT 'Ej: Positivo, Ausente',
+    reflejo_deglutorio VARCHAR(100) COMMENT 'Ej: Presente, Alterado',
+    
+    -- ✨ NUEVOS CAMPOS: Otros Hallazgos
+    postura_marcha TEXT COMMENT 'Ej: Normal, Cojera en miembro posterior derecho',
+    
+    -- ✨ NUEVO CAMPO: Laboratorios
+    laboratorios TEXT COMMENT 'Laboratorios realizados, resultados y observaciones',
+    
     FOREIGN KEY (id_paciente) REFERENCES Paciente(id),
     FOREIGN KEY (id_doctor) REFERENCES Doctor(id),
     FOREIGN KEY (id_usuario_registro) REFERENCES Usuario(id),
@@ -152,13 +187,12 @@ CREATE TABLE Diagnostico (
 );
 
 -- Tabla: DiagnosticoConsulta
+-- ✨ CAMBIO: Eliminados campos 'tipo' y 'estado' (ya no son necesarios)
 CREATE TABLE DiagnosticoConsulta (
     id INT AUTO_INCREMENT PRIMARY KEY,
     id_consulta INT,
     id_diagnostico INT,
-    tipo VARCHAR(50),
-    estado ENUM('Activo', 'Resuelto') DEFAULT 'Activo',
-    comentarios TEXT,
+    comentarios TEXT COMMENT 'Comentarios libres sobre el diagnóstico',
     FOREIGN KEY (id_consulta) REFERENCES Consulta(id),
     FOREIGN KEY (id_diagnostico) REFERENCES Diagnostico(id)
 );
@@ -326,11 +360,17 @@ SELECT CONCAT('✓ ', COUNT(*), ' Usuarios creados') AS Resultado FROM Usuario;
 SELECT CONCAT('✓ ', COUNT(*), ' Especies creadas') AS Resultado FROM Especie;
 SELECT CONCAT('✓ ', COUNT(*), ' Razas creadas') AS Resultado FROM Raza;
 SELECT CONCAT('✓ ', COUNT(*), ' Doctores creados') AS Resultado FROM Doctor;
+SELECT CONCAT('✓ ', COUNT(*), ' Diagnósticos creados') AS Resultado FROM Diagnostico;
 SELECT CONCAT('✓ ', COUNT(*), ' Medicamentos creados') AS Resultado FROM Medicamento;
 SELECT CONCAT('✓ ', COUNT(*), ' Pacientes de ejemplo') AS Resultado FROM Paciente;
 
--- Verificar estructura de la tabla Paciente
-DESCRIBE Paciente;
+-- Verificar estructura de la tabla Consulta
+SELECT 'Estructura de tabla Consulta:' AS Info;
+DESCRIBE Consulta;
+
+-- Verificar estructura de la tabla DiagnosticoConsulta
+SELECT 'Estructura de tabla DiagnosticoConsulta:' AS Info;
+DESCRIBE DiagnosticoConsulta;
 
 -- Verificar razas por especie
 SELECT
@@ -340,3 +380,5 @@ FROM Especie e
 LEFT JOIN Raza r ON e.id = r.id_especie
 GROUP BY e.id, e.nombre
 ORDER BY e.id;
+
+SELECT '¡Script ejecutado exitosamente!' AS Mensaje;

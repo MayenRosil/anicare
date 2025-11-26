@@ -99,7 +99,6 @@ export default function HistorialClinicoPage() {
                     <th>Fecha y Hora</th>
                     <th>Motivo</th>
                     <th>Doctor</th>
-                    <th>Diagnósticos</th>
                     <th>Estado</th>
                     <th className="text-center">Acciones</th>
                   </tr>
@@ -143,15 +142,6 @@ export default function HistorialClinicoPage() {
                             </div>
                           </div>
                         </div>
-                      </td>
-                      <td>
-                        {c.diagnosticos ? (
-                          <span className="badge bg-info text-dark">
-                            {c.diagnosticos}
-                          </span>
-                        ) : (
-                          <span className="text-muted fst-italic">Sin diagnóstico</span>
-                        )}
                       </td>
                       <td>
                         <span className={`badge ${

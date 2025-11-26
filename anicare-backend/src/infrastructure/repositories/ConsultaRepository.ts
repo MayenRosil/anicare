@@ -9,8 +9,12 @@ export class ConsultaRepository implements IConsultaRepository {
     const [result]: any = await pool.query(
       `INSERT INTO Consulta 
         (id_paciente, id_doctor, id_usuario_registro, id_cita, fecha_hora, estado, 
-         motivo_consulta, peso, temperatura, frecuencia_cardiaca, frecuencia_respiratoria, notas_adicionales)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         motivo_consulta, peso, temperatura, frecuencia_cardiaca, frecuencia_respiratoria, notas_adicionales,
+         anamnesis, historia_clinica, pulso_arterial, tllc, color_mucosas,
+         condicion_corporal, estado_hidratacion, estado_mental,
+         palmo_percusion_toracica, auscultacion_pulmonar,
+         reflejo_tusigeno, reflejo_deglutorio, postura_marcha, laboratorios)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         data.id_paciente,
         data.id_doctor,
@@ -23,7 +27,22 @@ export class ConsultaRepository implements IConsultaRepository {
         data.temperatura || null,
         data.frecuencia_cardiaca || null,
         data.frecuencia_respiratoria || null,
-        data.notas_adicionales || null
+        data.notas_adicionales || null,
+        // ✨ NUEVOS CAMPOS
+        data.anamnesis || null,
+        data.historia_clinica || null,
+        data.pulso_arterial || null,
+        data.tllc || null,
+        data.color_mucosas || null,
+        data.condicion_corporal || null,
+        data.estado_hidratacion || null,
+        data.estado_mental || null,
+        data.palmo_percusion_toracica || null,
+        data.auscultacion_pulmonar || null,
+        data.reflejo_tusigeno || null,
+        data.reflejo_deglutorio || null,
+        data.postura_marcha || null,
+        data.laboratorios || null
       ]
     );
 
@@ -68,8 +87,7 @@ export class ConsultaRepository implements IConsultaRepository {
     return rows.length > 0 ? rows[0] : null;
   }
 
-  
-    async obtenerTodas(): Promise<any[]> {
+  async obtenerTodas(): Promise<any[]> {
     const [rows]: any = await pool.query(`
       SELECT 
         c.id,
@@ -79,16 +97,10 @@ export class ConsultaRepository implements IConsultaRepository {
         c.estado,
         c.notas_adicionales,
         p.nombre AS nombre_paciente,
-        CONCAT(d.nombre, ' ', d.apellido) AS nombre_doctor,
-        dg.nombre AS diagnostico
+        CONCAT(d.nombre, ' ', d.apellido) AS nombre_doctor
       FROM Consulta c
       LEFT JOIN Paciente p ON p.id = c.id_paciente
       LEFT JOIN Doctor d ON d.id = c.id_doctor
-      LEFT JOIN DiagnosticoConsulta dc 
-        ON dc.id_consulta = c.id 
-        AND dc.tipo = 'Principal'
-      LEFT JOIN Diagnostico dg 
-        ON dg.id = dc.id_diagnostico
       ORDER BY c.fecha_hora DESC
     `);
     return rows;
@@ -98,7 +110,19 @@ export class ConsultaRepository implements IConsultaRepository {
     const campos = [];
     const valores: any[] = [];
 
+    // Lista de campos válidos en la tabla Consulta
+    const columnasValidas = [
+      'id_paciente', 'id_doctor', 'id_usuario_registro', 'id_cita', 'fecha_hora', 'estado',
+      'motivo_consulta', 'peso', 'temperatura', 'frecuencia_cardiaca', 'frecuencia_respiratoria', 'notas_adicionales',
+      // ✨ NUEVOS CAMPOS
+      'anamnesis', 'historia_clinica', 'pulso_arterial', 'tllc', 'color_mucosas',
+      'condicion_corporal', 'estado_hidratacion', 'estado_mental',
+      'palmo_percusion_toracica', 'auscultacion_pulmonar',
+      'reflejo_tusigeno', 'reflejo_deglutorio', 'postura_marcha', 'laboratorios'
+    ];
+
     for (const [key, value] of Object.entries(data)) {
+      if (!columnasValidas.includes(key)) continue;
       campos.push(`${key} = ?`);
       valores.push(value);
     }
@@ -115,41 +139,35 @@ export class ConsultaRepository implements IConsultaRepository {
     );
   }
 
-// anicare-backend/src/infrastructure/repositories/ConsultaRepository.ts
-// REEMPLAZA el método obtenerPorPaciente con este:
-
-async obtenerPorPaciente(idPaciente: number): Promise<any[]> {
-  const query = `
-    SELECT 
-      c.id,
-      c.id_paciente,
-      c.id_doctor,
-      c.fecha_hora,
-      c.estado,
-      c.notas_adicionales,
-      d.nombre as doctor_nombre,
-      d.apellido as doctor_apellido,
-      cita.comentario as comentario,
-      GROUP_CONCAT(DISTINCT diag.nombre SEPARATOR ', ') as diagnosticos
-    FROM Consulta c
-    LEFT JOIN Cita cita ON cita.id = c.id_cita
-    LEFT JOIN Doctor d ON c.id_doctor = d.id
-    LEFT JOIN DiagnosticoConsulta dc ON dc.id_consulta = c.id
-    LEFT JOIN Diagnostico diag ON dc.id_diagnostico = diag.id
-    WHERE c.id_paciente = ?
-    GROUP BY c.id, c.id_paciente, c.id_doctor, c.fecha_hora, c.estado, c.notas_adicionales, d.nombre, d.apellido
-    ORDER BY c.fecha_hora DESC
-  `;
-  
-  try {
-    const [rows]: any = await pool.query(query, [idPaciente]);
-    return rows;
-  } catch (error) {
-    console.error('Error en obtenerPorPaciente:', error);
-    throw error;
+  async obtenerPorPaciente(idPaciente: number): Promise<any[]> {
+    const query = `
+      SELECT 
+        c.id,
+        c.id_paciente,
+        c.id_doctor,
+        c.fecha_hora,
+        c.estado,
+        c.notas_adicionales,
+        d.nombre as doctor_nombre,
+        d.apellido as doctor_apellido,
+        cita.comentario as comentario,
+        GROUP_CONCAT(DISTINCT diag.nombre SEPARATOR ', ') as diagnosticos
+      FROM Consulta c
+      LEFT JOIN Cita cita ON cita.id = c.id_cita
+      LEFT JOIN Doctor d ON c.id_doctor = d.id
+      LEFT JOIN DiagnosticoConsulta dc ON dc.id_consulta = c.id
+      LEFT JOIN Diagnostico diag ON dc.id_diagnostico = diag.id
+      WHERE c.id_paciente = ?
+      GROUP BY c.id, c.id_paciente, c.id_doctor, c.fecha_hora, c.estado, c.notas_adicionales, d.nombre, d.apellido
+      ORDER BY c.fecha_hora DESC
+    `;
+    
+    try {
+      const [rows]: any = await pool.query(query, [idPaciente]);
+      return rows;
+    } catch (error) {
+      console.error('Error en obtenerPorPaciente:', error);
+      throw error;
+    }
   }
-}
-
-
-  
 }

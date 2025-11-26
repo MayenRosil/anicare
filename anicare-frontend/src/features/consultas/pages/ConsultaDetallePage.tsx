@@ -50,7 +50,7 @@ const cargarDatos = async () => {
         (t: any) => t.id_diagnostico_consulta === diag.id
       );
       
-      // 🔧 FIX: Ordenar tratamientos por ID para mantener consistencia
+      // Ordenar tratamientos por ID para mantener consistencia
       const tratamientosOrdenados = tratDelDiag.sort((a: any, b: any) => a.id - b.id);
       
       console.log(`  🔬 Diagnóstico ${diag.id} - Tratamientos encontrados:`, tratamientosOrdenados);
@@ -82,18 +82,15 @@ const cargarDatos = async () => {
   });
 
 const agregarDiagnostico = () => {
-  // 🔧 FIX: NO crear en BD inmediatamente, solo agregar al estado
-  // Se guardará cuando el usuario haga clic en "Guardar Cambios"
+  // ✨ SIN tipo ni estado
   const nuevoDiag = {
-    id: null, // ← Sin ID, se creará al guardar
+    id: null,
     id_consulta: Number(idConsulta),
     id_diagnostico: 1,
-    tipo: 'Secundario',
-    estado: 'Activo',
     comentarios: '',
     tratamientos: [{
       id: null,
-      id_diagnostico_consulta: null, // ← Se asignará cuando se guarde el diagnóstico
+      id_diagnostico_consulta: null,
       id_medicamento: null,
       dosis: '',
       frecuencia: '',
@@ -110,10 +107,8 @@ const agregarTratamiento = async (indexDiag: number) => {
   const diag = diagnosticos[indexDiag];
   
   try {
-    // 🔧 FIX: NO crear en BD inmediatamente, solo agregar al estado
-    // Se guardará cuando el usuario haga clic en "Guardar Cambios"
     const nuevoTrat = {
-      id: null, // ← Sin ID, se creará al guardar
+      id: null,
       id_diagnostico_consulta: diag.id,
       id_medicamento: null,
       dosis: '',
@@ -126,7 +121,7 @@ const agregarTratamiento = async (indexDiag: number) => {
     nuevosDiags[indexDiag].tratamientos.push(nuevoTrat);
     setDiagnosticos(nuevosDiags);
     
-    console.log(`✅ Tratamiento temporal agregado al Diagnóstico ${indexDiag + 1} (se guardará al hacer clic en Guardar)`);
+    console.log(`✅ Tratamiento temporal agregado al Diagnóstico ${indexDiag + 1}`);
   } catch (error) {
     alert('Error al agregar tratamiento');
     console.error(error);
@@ -141,14 +136,29 @@ const guardarCambios = async () => {
 
     console.log('🔍 ANTES DE GUARDAR - Estado de diagnósticos:', JSON.parse(JSON.stringify(diagnosticos)));
 
-    // 1. Guardar consulta
+    // 1. Guardar consulta (incluye 14 campos nuevos)
     await actualizarConsulta(Number(idConsulta), {
       motivo_consulta: consultaCompleta.motivo_consulta,
       peso: consultaCompleta.peso,
       temperatura: consultaCompleta.temperatura,
       frecuencia_cardiaca: consultaCompleta.frecuencia_cardiaca,
       frecuencia_respiratoria: consultaCompleta.frecuencia_respiratoria,
-      notas_adicionales: consultaCompleta.notas_adicionales
+      notas_adicionales: consultaCompleta.notas_adicionales,
+      // ✨ 14 CAMPOS NUEVOS
+      anamnesis: consultaCompleta.anamnesis,
+      historia_clinica: consultaCompleta.historia_clinica,
+      pulso_arterial: consultaCompleta.pulso_arterial,
+      tllc: consultaCompleta.tllc,
+      color_mucosas: consultaCompleta.color_mucosas,
+      condicion_corporal: consultaCompleta.condicion_corporal,
+      estado_hidratacion: consultaCompleta.estado_hidratacion,
+      estado_mental: consultaCompleta.estado_mental,
+      palmo_percusion_toracica: consultaCompleta.palmo_percusion_toracica,
+      auscultacion_pulmonar: consultaCompleta.auscultacion_pulmonar,
+      reflejo_tusigeno: consultaCompleta.reflejo_tusigeno,
+      reflejo_deglutorio: consultaCompleta.reflejo_deglutorio,
+      postura_marcha: consultaCompleta.postura_marcha,
+      laboratorios: consultaCompleta.laboratorios
     });
 
     // 2. Guardar diagnósticos y tratamientos SECUENCIALMENTE
@@ -156,17 +166,14 @@ const guardarCambios = async () => {
       const diag = diagnosticos[i];
       console.log(`\n📋 Procesando Diagnóstico ${i + 1}:`, {
         id: diag.id,
-        tipo: diag.tipo,
         comentarios: diag.comentarios,
         numTratamientos: diag.tratamientos.length
       });
 
       if (diag.id) {
-        // Actualizar diagnóstico existente
+        // Actualizar diagnóstico existente (✨ SIN tipo/estado)
         await actualizarDiagnostico(diag.id, {
-          comentarios: diag.comentarios,
-          tipo: diag.tipo,
-          estado: diag.estado
+          comentarios: diag.comentarios
         });
 
         // Guardar tratamientos del diagnóstico SECUENCIALMENTE
@@ -176,10 +183,7 @@ const guardarCambios = async () => {
             id: trat.id,
             id_diagnostico_consulta: trat.id_diagnostico_consulta,
             id_medicamento: trat.id_medicamento,
-            dosis: trat.dosis,
-            frecuencia: trat.frecuencia,
-            duracion: trat.duracion,
-            instrucciones: trat.instrucciones?.substring(0, 30)
+            dosis: trat.dosis
           });
 
           if (trat.id) {
@@ -206,12 +210,10 @@ const guardarCambios = async () => {
           }
         }
       } else {
-        // Crear nuevo diagnóstico
+        // Crear nuevo diagnóstico (✨ SIN tipo/estado)
         const resDiag = await axiosInstance.post('/diagnosticos', {
           id_consulta: Number(idConsulta),
           id_diagnostico: 1,
-          tipo: diag.tipo,
-          estado: diag.estado,
           comentarios: diag.comentarios
         });
         diag.id = resDiag.data.id;
@@ -245,9 +247,6 @@ const guardarCambios = async () => {
   }
 };
 
-// 🔧 FUNCIÓN COMPLETA Y OPTIMIZADA para ConsultaDetallePage.tsx
-// Reemplaza tu función handleFinalizarConsulta actual con esta:
-
 const handleFinalizarConsulta = async () => {
   if (!confirm('¿Está seguro de finalizar esta consulta? Primero se guardarán todos los cambios. Esta acción no se puede deshacer.')) {
     return;
@@ -262,14 +261,29 @@ const handleFinalizarConsulta = async () => {
     setSaving(true);
 
     console.log('💾 Paso 1/4: Guardando datos de la consulta...');
-    // 1. Guardar datos básicos de consulta (signos vitales, motivo, etc.)
+    // 1. Guardar datos básicos de consulta (incluye 14 campos nuevos)
     await actualizarConsulta(Number(idConsulta), {
       motivo_consulta: consultaCompleta.motivo_consulta,
       peso: consultaCompleta.peso,
       temperatura: consultaCompleta.temperatura,
       frecuencia_cardiaca: consultaCompleta.frecuencia_cardiaca,
       frecuencia_respiratoria: consultaCompleta.frecuencia_respiratoria,
-      notas_adicionales: consultaCompleta.notas_adicionales
+      notas_adicionales: consultaCompleta.notas_adicionales,
+      // ✨ 14 CAMPOS NUEVOS
+      anamnesis: consultaCompleta.anamnesis,
+      historia_clinica: consultaCompleta.historia_clinica,
+      pulso_arterial: consultaCompleta.pulso_arterial,
+      tllc: consultaCompleta.tllc,
+      color_mucosas: consultaCompleta.color_mucosas,
+      condicion_corporal: consultaCompleta.condicion_corporal,
+      estado_hidratacion: consultaCompleta.estado_hidratacion,
+      estado_mental: consultaCompleta.estado_mental,
+      palmo_percusion_toracica: consultaCompleta.palmo_percusion_toracica,
+      auscultacion_pulmonar: consultaCompleta.auscultacion_pulmonar,
+      reflejo_tusigeno: consultaCompleta.reflejo_tusigeno,
+      reflejo_deglutorio: consultaCompleta.reflejo_deglutorio,
+      postura_marcha: consultaCompleta.postura_marcha,
+      laboratorios: consultaCompleta.laboratorios
     });
 
     console.log('💾 Paso 2/4: Guardando diagnósticos...');
@@ -278,11 +292,9 @@ const handleFinalizarConsulta = async () => {
       const diag = diagnosticos[i];
       
       if (diag.id) {
-        // Actualizar diagnóstico existente
+        // Actualizar diagnóstico existente (✨ SIN tipo/estado)
         await actualizarDiagnostico(diag.id, {
-          comentarios: diag.comentarios,
-          tipo: diag.tipo,
-          estado: diag.estado
+          comentarios: diag.comentarios
         });
 
         // Guardar tratamientos del diagnóstico
@@ -311,12 +323,10 @@ const handleFinalizarConsulta = async () => {
           }
         }
       } else {
-        // Crear nuevo diagnóstico
+        // Crear nuevo diagnóstico (✨ SIN tipo/estado)
         const resDiag = await axiosInstance.post('/diagnosticos', {
           id_consulta: Number(idConsulta),
           id_diagnostico: 1,
-          tipo: diag.tipo,
-          estado: diag.estado,
           comentarios: diag.comentarios
         });
         
@@ -350,18 +360,6 @@ const handleFinalizarConsulta = async () => {
     setSaving(false);
   }
 };
-
-/* 
-📝 RESUMEN DE CAMBIOS:
-✅ Guarda TODOS los datos antes de finalizar
-✅ Maneja diagnósticos nuevos y existentes
-✅ Maneja tratamientos nuevos y existentes
-✅ Cambia el estado a 'Finalizada' al final
-✅ Redirige al historial del paciente
-✅ Manejo completo de errores
-✅ Estados de carga (setSaving)
-✅ Logs para debugging
-*/
 
   if (loading) return <p className="p-4">Cargando información de la consulta...</p>;
   if (!consultaCompleta) return <p className="p-4">No se encontró la consulta</p>;
@@ -522,6 +520,244 @@ const handleFinalizarConsulta = async () => {
         </div>
       </div>
 
+      {/* ✨ NUEVA SECCIÓN 1: ANAMNESIS */}
+      <div className="card mb-4">
+        <div className="card-header bg-warning text-dark">
+          <h5 className="mb-0">📝 Anamnesis</h5>
+        </div>
+        <div className="card-body">
+          <div className="mb-3">
+            <label className="form-label"><strong>Anamnesis (Entorno, Ambiente, Contexto)</strong></label>
+            <textarea
+              className="form-control"
+              rows={4}
+              value={consultaCompleta.anamnesis || ''}
+              onChange={(e) => setConsultaCompleta({ ...consultaCompleta, anamnesis: e.target.value })}
+              disabled={esFinalizada}
+              placeholder="Descripción del entorno del paciente, cambios recientes en alimentación, comportamiento, etc..."
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* ✨ NUEVA SECCIÓN 2: HISTORIA CLÍNICA */}
+      <div className="card mb-4">
+        <div className="card-header bg-info text-white">
+          <h5 className="mb-0">📋 Historia Clínica</h5>
+        </div>
+        <div className="card-body">
+          <div className="mb-3">
+            <label className="form-label"><strong>Historia Clínica (Medicamentos, Cirugías, Antecedentes)</strong></label>
+            <textarea
+              className="form-control"
+              rows={4}
+              value={consultaCompleta.historia_clinica || ''}
+              onChange={(e) => setConsultaCompleta({ ...consultaCompleta, historia_clinica: e.target.value })}
+              disabled={esFinalizada}
+              placeholder="Medicamentos actuales, cirugías previas, enfermedades crónicas, vacunaciones..."
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* ✨ NUEVA SECCIÓN 3: SIGNOS VITALES ADICIONALES */}
+      <div className="card mb-4">
+        <div className="card-header bg-success text-white">
+          <h5 className="mb-0">❤️ Signos Vitales Adicionales</h5>
+        </div>
+        <div className="card-body">
+          <div className="row">
+            <div className="col-md-4 mb-3">
+              <label className="form-label"><strong>Pulso Arterial</strong></label>
+              <input
+                type="text"
+                className="form-control"
+                value={consultaCompleta.pulso_arterial || ''}
+                onChange={(e) => setConsultaCompleta({ ...consultaCompleta, pulso_arterial: e.target.value })}
+                disabled={esFinalizada}
+                placeholder="Ej: Fuerte, regular"
+              />
+            </div>
+
+            <div className="col-md-4 mb-3">
+              <label className="form-label"><strong>TLLC (Tiempo Llenado Capilar)</strong></label>
+              <input
+                type="text"
+                className="form-control"
+                value={consultaCompleta.tllc || ''}
+                onChange={(e) => setConsultaCompleta({ ...consultaCompleta, tllc: e.target.value })}
+                disabled={esFinalizada}
+                placeholder="Ej: < 2 segundos"
+              />
+            </div>
+
+            <div className="col-md-4 mb-3">
+              <label className="form-label"><strong>Color de Mucosas</strong></label>
+              <input
+                type="text"
+                className="form-control"
+                value={consultaCompleta.color_mucosas || ''}
+                onChange={(e) => setConsultaCompleta({ ...consultaCompleta, color_mucosas: e.target.value })}
+                disabled={esFinalizada}
+                placeholder="Ej: Rosado pálido"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ✨ NUEVA SECCIÓN 4: EVALUACIÓN GENERAL */}
+      <div className="card mb-4">
+        <div className="card-header bg-primary text-white">
+          <h5 className="mb-0">👤 Evaluación General</h5>
+        </div>
+        <div className="card-body">
+          <div className="row">
+            <div className="col-md-4 mb-3">
+              <label className="form-label"><strong>Condición Corporal (BCS)</strong></label>
+              <input
+                type="text"
+                className="form-control"
+                value={consultaCompleta.condicion_corporal || ''}
+                onChange={(e) => setConsultaCompleta({ ...consultaCompleta, condicion_corporal: e.target.value })}
+                disabled={esFinalizada}
+                placeholder="Ej: 4/9"
+              />
+            </div>
+
+            <div className="col-md-4 mb-3">
+              <label className="form-label"><strong>Estado de Hidratación</strong></label>
+              <input
+                type="text"
+                className="form-control"
+                value={consultaCompleta.estado_hidratacion || ''}
+                onChange={(e) => setConsultaCompleta({ ...consultaCompleta, estado_hidratacion: e.target.value })}
+                disabled={esFinalizada}
+                placeholder="Ej: < 2% pérdida"
+              />
+            </div>
+
+            <div className="col-md-4 mb-3">
+              <label className="form-label"><strong>Estado Mental</strong></label>
+              <input
+                type="text"
+                className="form-control"
+                value={consultaCompleta.estado_mental || ''}
+                onChange={(e) => setConsultaCompleta({ ...consultaCompleta, estado_mental: e.target.value })}
+                disabled={esFinalizada}
+                placeholder="Ej: Alerta"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ✨ NUEVA SECCIÓN 5: EXPLORACIÓN RESPIRATORIA */}
+      <div className="card mb-4">
+        <div className="card-header bg-secondary text-white">
+          <h5 className="mb-0">🫁 Exploración Respiratoria</h5>
+        </div>
+        <div className="card-body">
+          <div className="mb-3">
+            <label className="form-label"><strong>Palmo-Percusión Torácica</strong></label>
+            <textarea
+              className="form-control"
+              rows={3}
+              value={consultaCompleta.palmo_percusion_toracica || ''}
+              onChange={(e) => setConsultaCompleta({ ...consultaCompleta, palmo_percusion_toracica: e.target.value })}
+              disabled={esFinalizada}
+              placeholder="Ej: Sonido claro, resonante"
+            />
+          </div>
+
+          <div className="mb-3">
+            <label className="form-label"><strong>Auscultación Pulmonar</strong></label>
+            <textarea
+              className="form-control"
+              rows={3}
+              value={consultaCompleta.auscultacion_pulmonar || ''}
+              onChange={(e) => setConsultaCompleta({ ...consultaCompleta, auscultacion_pulmonar: e.target.value })}
+              disabled={esFinalizada}
+              placeholder="Ej: Sonidos vesiculares normales"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* ✨ NUEVA SECCIÓN 6: REFLEJOS FISIOLÓGICOS */}
+      <div className="card mb-4">
+        <div className="card-header bg-danger text-white">
+          <h5 className="mb-0">🔬 Reflejos Fisiológicos</h5>
+        </div>
+        <div className="card-body">
+          <div className="row">
+            <div className="col-md-6 mb-3">
+              <label className="form-label"><strong>Reflejo Tusígeno</strong></label>
+              <input
+                type="text"
+                className="form-control"
+                value={consultaCompleta.reflejo_tusigeno || ''}
+                onChange={(e) => setConsultaCompleta({ ...consultaCompleta, reflejo_tusigeno: e.target.value })}
+                disabled={esFinalizada}
+                placeholder="Ej: Positivo"
+              />
+            </div>
+
+            <div className="col-md-6 mb-3">
+              <label className="form-label"><strong>Reflejo Deglutorio</strong></label>
+              <input
+                type="text"
+                className="form-control"
+                value={consultaCompleta.reflejo_deglutorio || ''}
+                onChange={(e) => setConsultaCompleta({ ...consultaCompleta, reflejo_deglutorio: e.target.value })}
+                disabled={esFinalizada}
+                placeholder="Ej: Presente"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ✨ NUEVA SECCIÓN 7: OTROS HALLAZGOS */}
+      <div className="card mb-4">
+        <div className="card-header bg-dark text-white">
+          <h5 className="mb-0">🚶 Otros Hallazgos</h5>
+        </div>
+        <div className="card-body">
+          <div className="mb-3">
+            <label className="form-label"><strong>Postura y Marcha</strong></label>
+            <textarea
+              className="form-control"
+              rows={3}
+              value={consultaCompleta.postura_marcha || ''}
+              onChange={(e) => setConsultaCompleta({ ...consultaCompleta, postura_marcha: e.target.value })}
+              disabled={esFinalizada}
+              placeholder="Ej: Normal, sin cojera"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* ✨ NUEVA SECCIÓN 8: LABORATORIOS */}
+      <div className="card mb-4">
+        <div className="card-header bg-info text-white">
+          <h5 className="mb-0">🧪 Laboratorios Realizados</h5>
+        </div>
+        <div className="card-body">
+          <div className="mb-3">
+            <label className="form-label"><strong>Laboratorios Realizados</strong></label>
+            <textarea
+              className="form-control"
+              rows={4}
+              value={consultaCompleta.laboratorios || ''}
+              onChange={(e) => setConsultaCompleta({ ...consultaCompleta, laboratorios: e.target.value })}
+              disabled={esFinalizada}
+              placeholder="Nombre del laboratorio, resultados obtenidos, observaciones..."
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Diagnósticos y Tratamientos */}
       <div className="card mb-4">
         <div className="card-header bg-danger text-white d-flex justify-content-between align-items-center">
@@ -540,41 +776,7 @@ const handleFinalizarConsulta = async () => {
               <div key={diag.id || indexDiag} className="border rounded p-3 mb-3" style={{ backgroundColor: '#f8f9fa' }}>
                 <h6 className="text-danger fw-bold mb-3">🔬 Diagnóstico {indexDiag + 1}</h6>
                 
-                {/* Diagnóstico */}
-                <div className="mb-3">
-                  <label className="form-label"><strong>Tipo:</strong></label>
-                  <select
-                    className="form-select"
-                    value={diag.tipo || 'Principal'}
-                    onChange={(e) => {
-                      const nuevos = [...diagnosticos];
-                      nuevos[indexDiag].tipo = e.target.value;
-                      setDiagnosticos(nuevos);
-                    }}
-                    disabled={esFinalizada}
-                  >
-                    <option value="Principal">Principal</option>
-                    <option value="Secundario">Secundario</option>
-                  </select>
-                </div>
-
-                <div className="mb-3">
-                  <label className="form-label"><strong>Estado:</strong></label>
-                  <select
-                    className="form-select"
-                    value={diag.estado || 'Activo'}
-                    onChange={(e) => {
-                      const nuevos = [...diagnosticos];
-                      nuevos[indexDiag].estado = e.target.value;
-                      setDiagnosticos(nuevos);
-                    }}
-                    disabled={esFinalizada}
-                  >
-                    <option value="Activo">Activo</option>
-                    <option value="Resuelto">Resuelto</option>
-                  </select>
-                </div>
-
+                {/* ✨ SIN tipo ni estado */}
                 <div className="mb-3">
                   <label className="form-label"><strong>Comentarios del Diagnóstico</strong></label>
                   <textarea
