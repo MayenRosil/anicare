@@ -129,8 +129,10 @@ async obtenerPorPaciente(idPaciente: number): Promise<any[]> {
       c.notas_adicionales,
       d.nombre as doctor_nombre,
       d.apellido as doctor_apellido,
+      cita.comentario as comentario,
       GROUP_CONCAT(DISTINCT diag.nombre SEPARATOR ', ') as diagnosticos
     FROM Consulta c
+    LEFT JOIN Cita cita ON cita.id = c.id_cita
     LEFT JOIN Doctor d ON c.id_doctor = d.id
     LEFT JOIN DiagnosticoConsulta dc ON dc.id_consulta = c.id
     LEFT JOIN Diagnostico diag ON dc.id_diagnostico = diag.id

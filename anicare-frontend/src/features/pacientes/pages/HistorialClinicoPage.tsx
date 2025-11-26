@@ -17,6 +17,7 @@ export default function HistorialClinicoPage() {
     try {
       setLoading(true);
       const data = await obtenerConsultasPorPaciente(Number(idPaciente));
+      console.log(data)
       setConsultas(data);
     } catch (error) {
       alert('Error al cargar el historial clínico');
@@ -121,9 +122,9 @@ export default function HistorialClinicoPage() {
                       </td>
                       <td>
                         <div style={{ maxWidth: '200px' }}>
-                          {c.motivo_consulta ? (
+                          {c.comentario ? (
                             <span className="text-truncate d-inline-block" style={{ maxWidth: '200px' }}>
-                              {c.motivo_consulta}
+                              {c.comentario}
                             </span>
                           ) : (
                             <span className="text-muted fst-italic">Sin motivo registrado</span>

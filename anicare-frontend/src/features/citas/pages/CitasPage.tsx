@@ -552,6 +552,15 @@ export default function CitasPage() {
                                 Atender
                               </button>
                             )}
+                                                        {cita.estado === 'Atendida' && (
+                              <button
+                                className="btn btn-sm btn-outline-primary"
+                                onClick={() => navigate(`/paciente/${cita.id_paciente}/historial`)}
+                              >
+                                <i className="bi bi-eye me-1"></i>
+                                Ver Historial
+                              </button>
+                            )}
                           </td>
                         </tr>
                       ))}
