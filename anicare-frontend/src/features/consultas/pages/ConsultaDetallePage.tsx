@@ -6,6 +6,7 @@ import { obtenerDiagnosticosPorConsulta, actualizarDiagnostico } from '../../dia
 import { obtenerTratamientosPorConsulta, actualizarTratamiento } from '../../tratamientos/services/tratamientoService';
 import { obtenerMedicamentos } from '../../medicamentos/services/medicamentoService';
 import axiosInstance from '../../../shared/config/axiosConfig';
+import jsPDF from 'jspdf';
 
 export default function ConsultaDetallePage() {
   const { idConsulta } = useParams<{ idConsulta: string }>();
@@ -82,7 +83,6 @@ const cargarDatos = async () => {
   });
 
 const agregarDiagnostico = () => {
-  // ✨ SIN tipo ni estado
   const nuevoDiag = {
     id: null,
     id_consulta: Number(idConsulta),
@@ -144,7 +144,6 @@ const guardarCambios = async () => {
       frecuencia_cardiaca: consultaCompleta.frecuencia_cardiaca,
       frecuencia_respiratoria: consultaCompleta.frecuencia_respiratoria,
       notas_adicionales: consultaCompleta.notas_adicionales,
-      // ✨ 14 CAMPOS NUEVOS
       anamnesis: consultaCompleta.anamnesis,
       historia_clinica: consultaCompleta.historia_clinica,
       pulso_arterial: consultaCompleta.pulso_arterial,
@@ -171,12 +170,10 @@ const guardarCambios = async () => {
       });
 
       if (diag.id) {
-        // Actualizar diagnóstico existente (✨ SIN tipo/estado)
         await actualizarDiagnostico(diag.id, {
           comentarios: diag.comentarios
         });
 
-        // Guardar tratamientos del diagnóstico SECUENCIALMENTE
         for (let j = 0; j < diag.tratamientos.length; j++) {
           const trat = diag.tratamientos[j];
           console.log(`  💊 Tratamiento ${j + 1} del Diagnóstico ${i + 1}:`, {
@@ -187,7 +184,6 @@ const guardarCambios = async () => {
           });
 
           if (trat.id) {
-            // Actualizar tratamiento existente
             await actualizarTratamiento(trat.id, {
               id_medicamento: trat.id_medicamento,
               dosis: trat.dosis,
@@ -196,7 +192,6 @@ const guardarCambios = async () => {
               instrucciones: trat.instrucciones
             });
           } else {
-            // Crear nuevo tratamiento
             const res = await axiosInstance.post('/tratamientos', {
               id_diagnostico_consulta: diag.id,
               id_medicamento: trat.id_medicamento,
@@ -210,7 +205,6 @@ const guardarCambios = async () => {
           }
         }
       } else {
-        // Crear nuevo diagnóstico (✨ SIN tipo/estado)
         const resDiag = await axiosInstance.post('/diagnosticos', {
           id_consulta: Number(idConsulta),
           id_diagnostico: 1,
@@ -219,7 +213,6 @@ const guardarCambios = async () => {
         diag.id = resDiag.data.id;
         console.log(`  ✅ Diagnóstico creado con ID: ${diag.id}`);
 
-        // Crear tratamientos del nuevo diagnóstico
         for (let j = 0; j < diag.tratamientos.length; j++) {
           const trat = diag.tratamientos[j];
           const resTrat = await axiosInstance.post('/tratamientos', {
@@ -261,7 +254,6 @@ const handleFinalizarConsulta = async () => {
     setSaving(true);
 
     console.log('💾 Paso 1/4: Guardando datos de la consulta...');
-    // 1. Guardar datos básicos de consulta (incluye 14 campos nuevos)
     await actualizarConsulta(Number(idConsulta), {
       motivo_consulta: consultaCompleta.motivo_consulta,
       peso: consultaCompleta.peso,
@@ -269,7 +261,6 @@ const handleFinalizarConsulta = async () => {
       frecuencia_cardiaca: consultaCompleta.frecuencia_cardiaca,
       frecuencia_respiratoria: consultaCompleta.frecuencia_respiratoria,
       notas_adicionales: consultaCompleta.notas_adicionales,
-      // ✨ 14 CAMPOS NUEVOS
       anamnesis: consultaCompleta.anamnesis,
       historia_clinica: consultaCompleta.historia_clinica,
       pulso_arterial: consultaCompleta.pulso_arterial,
@@ -287,22 +278,18 @@ const handleFinalizarConsulta = async () => {
     });
 
     console.log('💾 Paso 2/4: Guardando diagnósticos...');
-    // 2. Guardar todos los diagnósticos y sus tratamientos
     for (let i = 0; i < diagnosticos.length; i++) {
       const diag = diagnosticos[i];
       
       if (diag.id) {
-        // Actualizar diagnóstico existente (✨ SIN tipo/estado)
         await actualizarDiagnostico(diag.id, {
           comentarios: diag.comentarios
         });
 
-        // Guardar tratamientos del diagnóstico
         for (let j = 0; j < diag.tratamientos.length; j++) {
           const trat = diag.tratamientos[j];
           
           if (trat.id) {
-            // Actualizar tratamiento existente
             await actualizarTratamiento(trat.id, {
               id_medicamento: trat.id_medicamento,
               dosis: trat.dosis,
@@ -311,7 +298,6 @@ const handleFinalizarConsulta = async () => {
               instrucciones: trat.instrucciones
             });
           } else {
-            // Crear nuevo tratamiento
             await axiosInstance.post('/tratamientos', {
               id_diagnostico_consulta: diag.id,
               id_medicamento: trat.id_medicamento,
@@ -323,14 +309,12 @@ const handleFinalizarConsulta = async () => {
           }
         }
       } else {
-        // Crear nuevo diagnóstico (✨ SIN tipo/estado)
         const resDiag = await axiosInstance.post('/diagnosticos', {
           id_consulta: Number(idConsulta),
           id_diagnostico: 1,
           comentarios: diag.comentarios
         });
         
-        // Crear tratamientos del nuevo diagnóstico
         for (let j = 0; j < diag.tratamientos.length; j++) {
           const trat = diag.tratamientos[j];
           await axiosInstance.post('/tratamientos', {
@@ -346,7 +330,6 @@ const handleFinalizarConsulta = async () => {
     }
 
     console.log('✅ Paso 3/4: Finalizando consulta (cambiando estado)...');
-    // 3. Cambiar estado de consulta a 'Finalizada'
     await finalizarConsulta(Number(idConsulta));
 
     console.log('✅ Paso 4/4: Redirigiendo al historial...');
@@ -359,6 +342,157 @@ const handleFinalizarConsulta = async () => {
   } finally {
     setSaving(false);
   }
+};
+
+// 📄 FUNCIÓN PARA GENERAR RECETA EN PDF
+const generarRecetaPDF = () => {
+  if (!consultaCompleta || diagnosticos.length === 0) {
+    alert('No hay diagnósticos ni tratamientos para generar la receta');
+    return;
+  }
+
+  const doc = new jsPDF();
+  let yPos = 20;
+
+  // Header - Título
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.text('RECETA MÉDICA VETERINARIA', 105, yPos, { align: 'center' });
+  yPos += 10;
+
+  // Línea separadora
+  doc.setLineWidth(0.5);
+  doc.line(20, yPos, 190, yPos);
+  yPos += 10;
+
+  // Información del Paciente
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.text('PACIENTE:', 20, yPos);
+  doc.setFont('helvetica', 'normal');
+  doc.text(consultaCompleta.paciente_nombre || 'N/A', 50, yPos);
+  yPos += 7;
+
+  doc.setFont('helvetica', 'bold');
+  doc.text('ESPECIE:', 20, yPos);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`${consultaCompleta.especie_nombre || 'N/A'} - ${consultaCompleta.raza_nombre || 'N/A'}`, 50, yPos);
+  yPos += 7;
+
+  doc.setFont('helvetica', 'bold');
+  doc.text('PROPIETARIO:', 20, yPos);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`${consultaCompleta.propietario_nombre || ''} ${consultaCompleta.propietario_apellido || ''}`, 50, yPos);
+  yPos += 7;
+
+  doc.setFont('helvetica', 'bold');
+  doc.text('DOCTOR:', 20, yPos);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Dr(a). ${consultaCompleta.doctor_nombre || ''} ${consultaCompleta.doctor_apellido || ''}`, 50, yPos);
+  yPos += 7;
+
+  doc.setFont('helvetica', 'bold');
+  doc.text('FECHA:', 20, yPos);
+  doc.setFont('helvetica', 'normal');
+  doc.text(new Date(consultaCompleta.fecha_hora).toLocaleDateString('es-GT'), 50, yPos);
+  yPos += 10;
+
+  // Línea separadora
+  doc.line(20, yPos, 190, yPos);
+  yPos += 10;
+
+  // DIAGNÓSTICOS Y TRATAMIENTOS
+  diagnosticos.forEach((diag, index) => {
+    // Verificar si necesitamos nueva página
+    if (yPos > 250) {
+      doc.addPage();
+      yPos = 20;
+    }
+
+    // Diagnóstico
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`DIAGNÓSTICO ${index + 1}:`, 20, yPos);
+    yPos += 7;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    const comentariosDiag = diag.comentarios || 'Sin comentarios';
+    const lineasDiag = doc.splitTextToSize(comentariosDiag, 170);
+    doc.text(lineasDiag, 20, yPos);
+    yPos += lineasDiag.length * 5 + 5;
+
+    // Tratamientos
+    if (diag.tratamientos && diag.tratamientos.length > 0) {
+      diag.tratamientos.forEach((trat: any, tratIndex: number) => {
+        // Buscar nombre del medicamento
+        const med = medicamentos.find((m: any) => m.id === trat.id_medicamento);
+        const nombreMed = med ? `${med.nombre} - ${med.presentacion}` : 'Medicamento no especificado';
+
+        // Verificar espacio
+        if (yPos > 250) {
+          doc.addPage();
+          yPos = 20;
+        }
+
+        doc.setFont('helvetica', 'bold');
+        doc.text(`   Tratamiento ${tratIndex + 1}:`, 20, yPos);
+        yPos += 6;
+
+        doc.setFont('helvetica', 'normal');
+        doc.text(`   • Medicamento: ${nombreMed}`, 20, yPos);
+        yPos += 5;
+        doc.text(`   • Dosis: ${trat.dosis || 'N/A'}`, 20, yPos);
+        yPos += 5;
+        doc.text(`   • Frecuencia: ${trat.frecuencia || 'N/A'}`, 20, yPos);
+        yPos += 5;
+        doc.text(`   • Duración: ${trat.duracion || 'N/A'}`, 20, yPos);
+        yPos += 5;
+
+        if (trat.instrucciones && trat.instrucciones.trim()) {
+          doc.text(`   • Instrucciones:`, 20, yPos);
+          yPos += 5;
+          const lineasInst = doc.splitTextToSize(trat.instrucciones, 160);
+          doc.text(lineasInst, 25, yPos);
+          yPos += lineasInst.length * 5;
+        }
+
+        yPos += 3;
+      });
+    }
+
+    yPos += 5;
+  });
+
+  // Espacio para firma
+  if (yPos > 230) {
+    doc.addPage();
+    yPos = 20;
+  }
+
+  yPos += 20;
+  doc.setLineWidth(0.3);
+  doc.line(70, yPos, 140, yPos);
+  yPos += 5;
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'italic');
+  doc.text('Firma y Sello del Médico Veterinario', 105, yPos, { align: 'center' });
+
+  // Footer
+  const numPaginas = doc.getNumberOfPages();
+  for (let i = 1; i <= numPaginas; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Receta generada el ${new Date().toLocaleString('es-GT')}`, 105, 285, { align: 'center' });
+    doc.text(`Página ${i} de ${numPaginas}`, 190, 285, { align: 'right' });
+  }
+
+  // Guardar PDF
+  const nombreArchivo = `Receta_${consultaCompleta.paciente_nombre}_${new Date().toISOString().split('T')[0]}.pdf`;
+  doc.save(nombreArchivo);
+  
+  console.log('✅ Receta PDF generada exitosamente');
 };
 
   if (loading) return <p className="p-4">Cargando información de la consulta...</p>;
@@ -385,6 +519,14 @@ const handleFinalizarConsulta = async () => {
         <div>
           <button className="btn btn-outline-secondary me-2" onClick={() => navigate(-1)}>
             ← Volver
+          </button>
+          {/* 📄 BOTÓN GENERAR RECETA */}
+          <button 
+            className="btn btn-outline-info me-2" 
+            onClick={generarRecetaPDF}
+            disabled={diagnosticos.length === 0}
+          >
+            📄 Generar Receta
           </button>
           {!esFinalizada && (
             <>
@@ -520,7 +662,7 @@ const handleFinalizarConsulta = async () => {
         </div>
       </div>
 
-      {/* ✨ NUEVA SECCIÓN 1: ANAMNESIS */}
+      {/* Anamnesis */}
       <div className="card mb-4">
         <div className="card-header bg-warning text-dark">
           <h5 className="mb-0">📝 Anamnesis</h5>
@@ -540,7 +682,7 @@ const handleFinalizarConsulta = async () => {
         </div>
       </div>
 
-      {/* ✨ NUEVA SECCIÓN 2: HISTORIA CLÍNICA */}
+      {/* Historia Clínica */}
       <div className="card mb-4">
         <div className="card-header bg-info text-white">
           <h5 className="mb-0">📋 Historia Clínica</h5>
@@ -560,7 +702,7 @@ const handleFinalizarConsulta = async () => {
         </div>
       </div>
 
-      {/* ✨ NUEVA SECCIÓN 3: SIGNOS VITALES ADICIONALES */}
+      {/* Signos Vitales Adicionales */}
       <div className="card mb-4">
         <div className="card-header bg-success text-white">
           <h5 className="mb-0">❤️ Signos Vitales Adicionales</h5>
@@ -606,7 +748,7 @@ const handleFinalizarConsulta = async () => {
         </div>
       </div>
 
-      {/* ✨ NUEVA SECCIÓN 4: EVALUACIÓN GENERAL */}
+      {/* Evaluación General */}
       <div className="card mb-4">
         <div className="card-header bg-primary text-white">
           <h5 className="mb-0">👤 Evaluación General</h5>
@@ -652,7 +794,7 @@ const handleFinalizarConsulta = async () => {
         </div>
       </div>
 
-      {/* ✨ NUEVA SECCIÓN 5: EXPLORACIÓN RESPIRATORIA */}
+      {/* Exploración Respiratoria */}
       <div className="card mb-4">
         <div className="card-header bg-secondary text-white">
           <h5 className="mb-0">🫁 Exploración Respiratoria</h5>
@@ -684,7 +826,7 @@ const handleFinalizarConsulta = async () => {
         </div>
       </div>
 
-      {/* ✨ NUEVA SECCIÓN 6: REFLEJOS FISIOLÓGICOS */}
+      {/* Reflejos Fisiológicos */}
       <div className="card mb-4">
         <div className="card-header bg-danger text-white">
           <h5 className="mb-0">🔬 Reflejos Fisiológicos</h5>
@@ -718,7 +860,7 @@ const handleFinalizarConsulta = async () => {
         </div>
       </div>
 
-      {/* ✨ NUEVA SECCIÓN 7: OTROS HALLAZGOS */}
+      {/* Otros Hallazgos */}
       <div className="card mb-4">
         <div className="card-header bg-dark text-white">
           <h5 className="mb-0">🚶 Otros Hallazgos</h5>
@@ -738,7 +880,7 @@ const handleFinalizarConsulta = async () => {
         </div>
       </div>
 
-      {/* ✨ NUEVA SECCIÓN 8: LABORATORIOS */}
+      {/* Laboratorios */}
       <div className="card mb-4">
         <div className="card-header bg-info text-white">
           <h5 className="mb-0">🧪 Laboratorios Realizados</h5>
@@ -776,7 +918,6 @@ const handleFinalizarConsulta = async () => {
               <div key={diag.id || indexDiag} className="border rounded p-3 mb-3" style={{ backgroundColor: '#f8f9fa' }}>
                 <h6 className="text-danger fw-bold mb-3">🔬 Diagnóstico {indexDiag + 1}</h6>
                 
-                {/* ✨ SIN tipo ni estado */}
                 <div className="mb-3">
                   <label className="form-label"><strong>Comentarios del Diagnóstico</strong></label>
                   <textarea
