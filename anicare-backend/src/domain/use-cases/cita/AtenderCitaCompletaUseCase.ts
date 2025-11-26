@@ -17,6 +17,7 @@ export class AtenderCitaCompletaUseCase {
 
   /**
    * Al atender una cita:
+   * 0️⃣ Verifica que la cita tenga un paciente asignado (NO NULL)
    * 1️⃣ Marca la cita como 'Atendida'
    * 2️⃣ Crea una consulta vinculada a esa cita (con signos vitales vacíos)
    * 3️⃣ Crea un diagnóstico vacío vinculado a la consulta
@@ -27,6 +28,11 @@ export class AtenderCitaCompletaUseCase {
     // 1️⃣ Buscar la cita
     const cita = await this.citaRepository.obtenerPorId(idCita);
     if (!cita) throw new Error('Cita no encontrada');
+
+    // ✨ NUEVO: Verificar que la cita tenga un paciente asignado
+    if (cita.id_paciente === null) {
+      throw new Error('No se puede atender una cita sin paciente asignado. Por favor, complete primero los datos del paciente.');
+    }
 
     // 2️⃣ Cambiar estado a 'Atendida'
     await this.citaRepository.actualizarEstado(idCita, 'Atendida');

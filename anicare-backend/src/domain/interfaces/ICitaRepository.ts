@@ -6,4 +6,10 @@ export interface ICitaRepository {
   obtenerTodos(): Promise<Cita[]>;
   obtenerPorId(id: number): Promise<Cita | null>;
   actualizarEstado(id: number, estado: 'Pendiente' | 'Atendida' | 'Cancelada'): Promise<void>;
+  
+  // ✨ NUEVO: Obtener citas con información poblada de paciente y propietario
+  obtenerTodasConDetalles(): Promise<any[]>;
+  
+  // ✨ NUEVO: Actualizar el paciente asignado a una cita
+  actualizarPaciente(id: number, id_paciente: number): Promise<void>;
 }

@@ -2,6 +2,7 @@
 -- SCRIPT DE CREACIÓN - BASE DE DATOS ANICARE (ACTUALIZADO)
 -- Fecha: Noviembre 2025
 -- Descripción: Esquema completo con mejoras al módulo de pacientes
+-- ✨ NUEVO: Soporte para "PACIENTE NUEVO" en citas (id_paciente NULLABLE)
 -- ============================================================================
 
 -- Crear la base de datos
@@ -108,15 +109,16 @@ CREATE TABLE Doctor (
 -- ============================================================================
 
 -- Tabla: Cita
+-- ✨ NUEVO: id_paciente ahora es NULLABLE para soportar "PACIENTE NUEVO"
 CREATE TABLE Cita (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    id_paciente INT,
+    id_paciente INT NULL COMMENT 'NULL = PACIENTE NUEVO (datos pendientes de registro)',
     id_doctor INT,
     id_usuario_registro INT,
     fecha_hora DATETIME NOT NULL,
     estado ENUM('Pendiente', 'Atendida', 'Cancelada') DEFAULT 'Pendiente',
-    comentario TEXT,
-    FOREIGN KEY (id_paciente) REFERENCES Paciente(id),
+    comentario TEXT COMMENT 'Motivo de la cita',
+    FOREIGN KEY (id_paciente) REFERENCES Paciente(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     FOREIGN KEY (id_doctor) REFERENCES Doctor(id),
     FOREIGN KEY (id_usuario_registro) REFERENCES Usuario(id)
 );
@@ -131,7 +133,7 @@ CREATE TABLE Consulta (
     fecha_hora DATETIME NOT NULL,
     estado ENUM('Abierta', 'Finalizada', 'Cancelada') DEFAULT 'Abierta',
     notas_adicionales TEXT,
-    motivo_consulta TEXT,
+    motivo_consulta TEXT COMMENT 'Motivo de la consulta (copiado del comentario de la cita)',
     peso DECIMAL(5,2),
     temperatura DECIMAL(4,2),
     frecuencia_cardiaca INT,
@@ -224,25 +226,25 @@ CREATE TABLE LogSistema (
 -- ============================================================================
 
 -- Roles del sistema
-INSERT INTO Rol (nombre, descripcion) VALUES 
+INSERT INTO Rol (nombre, descripcion) VALUES
 ('admin', 'Administrador del sistema'),
 ('doctor', 'Doctor que atiende pacientes');
 
 -- Usuarios por defecto
 -- Contraseña para 'admin': admin123
 -- Contraseña para 'ana': ana123
-INSERT INTO Usuario (nombre_usuario, correo, contraseña, id_rol, activo) VALUES 
+INSERT INTO Usuario (nombre_usuario, correo, contraseña, id_rol, activo) VALUES
 ('admin', 'admin@anicare.com', '$2b$10$uN7vMwGGY3H97GeBcQozvu59kENGU4S72MitJS/C1J1Dr.DfBONTO', 1, true),
 ('ana', 'ana@anicare.com', '$2b$10$7iXS3eP9eJMNooR.T9KWBuz53nsJCpyLViTT9ctYsKXynPUJphyyW', 2, true);
 
 -- ✨ ESPECIES (Solo 3: Canino, Felino, Otro)
-INSERT INTO Especie (id, nombre, descripcion) VALUES 
+INSERT INTO Especie (id, nombre, descripcion) VALUES
 (1, 'Canino', 'Perros de todas las razas'),
 (2, 'Felino', 'Gatos de todas las razas'),
 (3, 'Otro', 'Otras especies animales (aves, reptiles, roedores, etc.)');
 
 -- ✨ RAZAS CANINAS (Especie 1)
-INSERT INTO Raza (id_especie, nombre, descripcion, especie_personalizada) VALUES 
+INSERT INTO Raza (id_especie, nombre, descripcion, especie_personalizada) VALUES
 (1, 'Labrador Retriever', 'Raza amigable y activa', NULL),
 (1, 'Pastor Alemán', 'Raza inteligente y leal', NULL),
 (1, 'Golden Retriever', 'Raza familiar y amigable', NULL),
@@ -258,7 +260,7 @@ INSERT INTO Raza (id_especie, nombre, descripcion, especie_personalizada) VALUES
 (1, 'Mestizo', 'Perro de raza mixta', NULL);
 
 -- ✨ RAZAS FELINAS (Especie 2)
-INSERT INTO Raza (id_especie, nombre, descripcion, especie_personalizada) VALUES 
+INSERT INTO Raza (id_especie, nombre, descripcion, especie_personalizada) VALUES
 (2, 'Persa', 'Gato de pelo largo y cara aplanada', NULL),
 (2, 'Siamés', 'Gato oriental de color claro con extremidades oscuras', NULL),
 (2, 'Maine Coon', 'Gato grande de pelo semi-largo', NULL),
@@ -272,7 +274,7 @@ INSERT INTO Raza (id_especie, nombre, descripcion, especie_personalizada) VALUES
 (2, 'Doméstico', 'Gato común sin raza específica', NULL);
 
 -- ✨ OTRAS ESPECIES (Especie 3) - Ejemplos
-INSERT INTO Raza (id_especie, nombre, descripcion, especie_personalizada) VALUES 
+INSERT INTO Raza (id_especie, nombre, descripcion, especie_personalizada) VALUES
 (3, 'Periquito', 'Ave pequeña doméstica', 'Ave'),
 (3, 'Canario', 'Ave cantora', 'Ave'),
 (3, 'Loro', 'Ave parlante', 'Ave'),
@@ -284,21 +286,21 @@ INSERT INTO Raza (id_especie, nombre, descripcion, especie_personalizada) VALUES
 (3, 'Hurón', 'Mamífero carnívoro pequeño', 'Hurón');
 
 -- Doctor de ejemplo
-INSERT INTO Doctor (id_usuario, nombre, apellido, especialidad, dpi, telefono, correo, activo) VALUES 
+INSERT INTO Doctor (id_usuario, nombre, apellido, especialidad, dpi, telefono, correo, activo) VALUES
 (2, 'Ana', 'Maldonado', 'Medicina veterinaria', '1234567890101', '55556666', 'ana@anicare.com', true);
 
 -- Diagnóstico placeholder
-INSERT INTO Diagnostico (id, nombre, descripcion) VALUES 
+INSERT INTO Diagnostico (id, nombre, descripcion) VALUES
 (1, 'Sin diagnóstico', 'Diagnóstico temporal utilizado para consultas automáticas')
 ON DUPLICATE KEY UPDATE nombre = VALUES(nombre);
 
 -- Medicamento placeholder
-INSERT INTO Medicamento (id, nombre, laboratorio, presentacion, unidad_medida, precio_compra, precio_venta, ganancia_venta, stock_actual) VALUES 
+INSERT INTO Medicamento (id, nombre, laboratorio, presentacion, unidad_medida, precio_compra, precio_venta, ganancia_venta, stock_actual) VALUES
 (1, 'Sin especificar', 'N/A', 'N/A', 'N/A', 0.00, 0.00, 0.00, 0)
 ON DUPLICATE KEY UPDATE nombre = VALUES(nombre);
 
 -- Medicamentos de ejemplo
-INSERT INTO Medicamento (nombre, laboratorio, presentacion, unidad_medida, precio_compra, precio_venta, ganancia_venta, stock_actual) VALUES 
+INSERT INTO Medicamento (nombre, laboratorio, presentacion, unidad_medida, precio_compra, precio_venta, ganancia_venta, stock_actual) VALUES
 ('Amoxicilina', 'Bayer', 'Tabletas 500mg', 'Tableta', 2.50, 5.00, 2.50, 100),
 ('Meloxicam', 'Boehringer', 'Inyectable 5mg/ml', 'ml', 15.00, 25.00, 10.00, 50),
 ('Dexametasona', 'Pfizer', 'Inyectable 4mg/ml', 'ml', 8.00, 15.00, 7.00, 75),
@@ -307,11 +309,11 @@ INSERT INTO Medicamento (nombre, laboratorio, presentacion, unidad_medida, preci
 ('Metronidazol', 'Bayer', 'Tabletas 250mg', 'Tableta', 1.80, 4.00, 2.20, 150);
 
 -- Propietario de ejemplo
-INSERT INTO Propietario (nombre, apellido, dpi, nit, direccion, telefono, correo) VALUES 
+INSERT INTO Propietario (nombre, apellido, dpi, nit, direccion, telefono, correo) VALUES
 ('Juan', 'Pérez', '1234567890101', '12345678', 'Zona 10, Guatemala', '12345678', 'juan@example.com');
 
 -- ✨ Paciente de ejemplo (con campos nuevos)
-INSERT INTO Paciente (id_propietario, id_raza, nombre, sexo, fecha_nacimiento, color, castrado, adoptado, fecha_adopcion, edad_aproximada) VALUES 
+INSERT INTO Paciente (id_propietario, id_raza, nombre, sexo, fecha_nacimiento, color, castrado, adoptado, fecha_adopcion, edad_aproximada) VALUES
 (1, 1, 'Fido', 'M', '2020-01-15', 'Dorado', true, false, NULL, false);
 
 -- ============================================================================
@@ -331,7 +333,7 @@ SELECT CONCAT('✓ ', COUNT(*), ' Pacientes de ejemplo') AS Resultado FROM Pacie
 DESCRIBE Paciente;
 
 -- Verificar razas por especie
-SELECT 
+SELECT
     e.nombre AS Especie,
     COUNT(r.id) AS Total_Razas
 FROM Especie e

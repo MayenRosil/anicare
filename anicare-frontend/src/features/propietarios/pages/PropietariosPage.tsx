@@ -508,7 +508,6 @@ export default function PropietariosPage() {
                         name="dpi"
                         value={formData.dpi}
                         onChange={handleInputChange}
-                        required
                       />
                     </div>
                     <div className="col-md-6 mb-3">
@@ -519,7 +518,6 @@ export default function PropietariosPage() {
                         name="nit"
                         value={formData.nit}
                         onChange={handleInputChange}
-                        required
                       />
                     </div>
                   </div>
@@ -556,7 +554,6 @@ export default function PropietariosPage() {
                         name="correo"
                         value={formData.correo}
                         onChange={handleInputChange}
-                        required
                       />
                     </div>
                   </div>

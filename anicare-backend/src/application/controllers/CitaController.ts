@@ -3,8 +3,10 @@ import { Request, Response } from 'express';
 import { CitaRepository } from '../../infrastructure/repositories/CitaRepository';
 import { CrearCitaUseCase } from '../../domain/use-cases/cita/CrearCitaUseCase';
 import { ObtenerTodasCitasUseCase } from '../../domain/use-cases/cita/ObtenerTodasCitasUseCase';
+import { ObtenerTodasCitasConDetallesUseCase } from '../../domain/use-cases/cita/ObtenerTodasCitasConDetallesUseCase'; // ✨ NUEVO
 import { ObtenerCitaPorIdUseCase } from '../../domain/use-cases/cita/ObtenerCitaPorIdUseCase';
 import { ActualizarEstadoCitaUseCase } from '../../domain/use-cases/cita/ActualizarEstadoCitaUseCase';
+import { ActualizarPacienteCitaUseCase } from '../../domain/use-cases/cita/ActualizarPacienteCitaUseCase'; // ✨ NUEVO
 import { AtenderCitaCompletaUseCase } from '../../domain/use-cases/cita/AtenderCitaCompletaUseCase';
 import { ConsultaRepository } from '../../infrastructure/repositories/ConsultaRepository';
 import { DiagnosticoConsultaRepository } from '../../infrastructure/repositories/DiagnosticoConsultaRepository';
@@ -39,57 +41,90 @@ export class CitaController {
     }
   }
 
+  // ✨ NUEVO: Endpoint para obtener citas con detalles
+  static async listarConDetalles(req: Request, res: Response): Promise<void> {
+    try {
+      const repo = new CitaRepository();
+      const useCase = new ObtenerTodasCitasConDetallesUseCase(repo);
+      const citas = await useCase.execute();
+      res.json(citas);
+    } catch (error) {
+      res.status(500).json({ mensaje: 'Error al obtener citas con detalles', error });
+    }
+  }
+
   static async obtenerPorId(req: Request, res: Response): Promise<void> {
     try {
       const id = parseInt(req.params.id);
       const repo = new CitaRepository();
       const useCase = new ObtenerCitaPorIdUseCase(repo);
       const cita = await useCase.execute(id);
-      if (!cita) res.status(404).json({ mensaje: 'Cita no encontrada' });
+      if (!cita) {
+        res.status(404).json({ mensaje: 'Cita no encontrada' });
+        return;
+      }
       res.json(cita);
     } catch (error) {
-      res.status(500).json({ mensaje: 'Error al buscar cita', error });
+      res.status(500).json({ mensaje: 'Error al obtener cita', error });
     }
   }
 
-  static async cambiarEstado(req: Request, res: Response): Promise<void> {
+  static async actualizarEstado(req: Request, res: Response): Promise<void> {
     try {
       const id = parseInt(req.params.id);
       const { estado } = req.body;
-
       const repo = new CitaRepository();
       const useCase = new ActualizarEstadoCitaUseCase(repo);
       await useCase.execute(id, estado);
-
       res.json({ mensaje: 'Estado actualizado correctamente' });
     } catch (error) {
-      res.status(500).json({ mensaje: 'Error al actualizar estado de la cita', error });
+      res.status(500).json({ mensaje: 'Error al actualizar estado', error });
     }
   }
 
+  // ✨ NUEVO: Endpoint para actualizar el paciente de una cita
+  static async actualizarPaciente(req: Request, res: Response): Promise<void> {
+    try {
+      const idCita = parseInt(req.params.id);
+      const { id_paciente } = req.body;
+
+      if (!id_paciente) {
+        res.status(400).json({ mensaje: 'El id_paciente es requerido' });
+        return;
+      }
+
+      const repo = new CitaRepository();
+      const useCase = new ActualizarPacienteCitaUseCase(repo);
+      await useCase.execute(idCita, id_paciente);
+      
+      res.json({ mensaje: 'Paciente asignado a la cita correctamente' });
+    } catch (error: any) {
+      res.status(500).json({ mensaje: error.message || 'Error al actualizar paciente de la cita', error });
+    }
+  }
 
   static async atenderCompleta(req: Request, res: Response): Promise<void> {
     try {
-      const id = parseInt(req.params.id);
+      const idCita = parseInt(req.params.id);
+      const citaRepo = new CitaRepository();
+      const consultaRepo = new ConsultaRepository();
+      const diagnosticoRepo = new DiagnosticoConsultaRepository();
+      const tratamientoRepo = new TratamientoRepository();
 
       const useCase = new AtenderCitaCompletaUseCase(
-        new CitaRepository(),
-        new ConsultaRepository(),
-        new DiagnosticoConsultaRepository(),
-        new TratamientoRepository()
+        citaRepo,
+        consultaRepo,
+        diagnosticoRepo,
+        tratamientoRepo
       );
 
-      const idConsulta = await useCase.execute(id);
-
-      res.json({
-        mensaje: 'Cita atendida correctamente. Consulta, diagnóstico y tratamiento creados.',
-        idConsulta
+      const idConsulta = await useCase.execute(idCita);
+      res.json({ 
+        mensaje: 'Cita atendida correctamente',
+        id_consulta: idConsulta
       });
-    } catch (error) {
-      res.status(500).json({
-        mensaje: 'Error al atender cita',
-        error
-      });
+    } catch (error: any) {
+      res.status(500).json({ mensaje: error.message || 'Error al atender cita', error });
     }
   }
 }

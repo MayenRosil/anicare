@@ -19,6 +19,7 @@ export class CitaRepository implements ICitaRepository {
        VALUES (?, ?, ?, ?, 'Pendiente', ?)`,
       [id_paciente, id_doctor, id_usuario_registro, toMySQLDateTime(fecha_hora.toString()), comentario]
     );
+    
     return new Cita(
       result.insertId,
       id_paciente,
@@ -35,7 +36,7 @@ export class CitaRepository implements ICitaRepository {
     return rows.map((row: any) =>
       new Cita(
         row.id,
-        row.id_paciente,
+        row.id_paciente, // Puede ser NULL
         row.id_doctor,
         row.id_usuario_registro,
         localStringToDatePreservingTime(row.fecha_hora),
@@ -45,6 +46,35 @@ export class CitaRepository implements ICitaRepository {
     );
   }
 
+  // ✨ NUEVO: Obtener todas las citas con detalles del paciente y propietario
+  async obtenerTodasConDetalles(): Promise<any[]> {
+    const [rows]: any = await pool.query(`
+      SELECT 
+        c.*,
+        CASE 
+          WHEN c.id_paciente IS NULL THEN 'PACIENTE NUEVO'
+          ELSE p.nombre
+        END AS paciente_nombre,
+        CASE 
+          WHEN c.id_paciente IS NULL THEN NULL
+          ELSE CONCAT(prop.nombre, ' ', prop.apellido)
+        END AS propietario_nombre,
+        d.nombre AS doctor_nombre,
+        d.apellido AS doctor_apellido
+      FROM Cita c
+      LEFT JOIN Paciente p ON p.id = c.id_paciente
+      LEFT JOIN Propietario prop ON prop.id = p.id_propietario
+      INNER JOIN Doctor d ON d.id = c.id_doctor
+      ORDER BY c.fecha_hora DESC
+    `);
+    
+    return rows.map((row: any) => ({
+      ...row,
+      fecha_hora: localStringToDatePreservingTime(row.fecha_hora),
+      esPacienteNuevo: row.id_paciente === null
+    }));
+  }
+
   async obtenerPorId(id: number): Promise<Cita | null> {
     const [rows]: any = await pool.query('SELECT * FROM Cita WHERE id = ?', [id]);
     const row = rows[0];
@@ -52,10 +82,10 @@ export class CitaRepository implements ICitaRepository {
 
     return new Cita(
       row.id,
-      row.id_paciente,
+      row.id_paciente, // Puede ser NULL
       row.id_doctor,
       row.id_usuario_registro,
-        localStringToDatePreservingTime(row.fecha_hora),
+      localStringToDatePreservingTime(row.fecha_hora),
       row.estado,
       row.comentario
     );
@@ -64,6 +94,9 @@ export class CitaRepository implements ICitaRepository {
   async actualizarEstado(id: number, estado: 'Pendiente' | 'Atendida' | 'Cancelada'): Promise<void> {
     await pool.query('UPDATE Cita SET estado = ? WHERE id = ?', [estado, id]);
   }
+
+  // ✨ NUEVO: Actualizar el paciente de una cita
+  async actualizarPaciente(id: number, id_paciente: number): Promise<void> {
+    await pool.query('UPDATE Cita SET id_paciente = ? WHERE id = ?', [id_paciente, id]);
+  }
 }
-
-
