@@ -3,16 +3,17 @@ import { Request, Response } from 'express';
 import { CitaRepository } from '../../infrastructure/repositories/CitaRepository';
 import { CrearCitaUseCase } from '../../domain/use-cases/cita/CrearCitaUseCase';
 import { ObtenerTodasCitasUseCase } from '../../domain/use-cases/cita/ObtenerTodasCitasUseCase';
-import { ObtenerTodasCitasConDetallesUseCase } from '../../domain/use-cases/cita/ObtenerTodasCitasConDetallesUseCase'; // ✨ NUEVO
+import { ObtenerTodasCitasConDetallesUseCase } from '../../domain/use-cases/cita/ObtenerTodasCitasConDetallesUseCase';
 import { ObtenerCitaPorIdUseCase } from '../../domain/use-cases/cita/ObtenerCitaPorIdUseCase';
 import { ActualizarEstadoCitaUseCase } from '../../domain/use-cases/cita/ActualizarEstadoCitaUseCase';
-import { ActualizarPacienteCitaUseCase } from '../../domain/use-cases/cita/ActualizarPacienteCitaUseCase'; // ✨ NUEVO
+import { ActualizarPacienteCitaUseCase } from '../../domain/use-cases/cita/ActualizarPacienteCitaUseCase';
 import { AtenderCitaCompletaUseCase } from '../../domain/use-cases/cita/AtenderCitaCompletaUseCase';
 import { ConsultaRepository } from '../../infrastructure/repositories/ConsultaRepository';
 import { DiagnosticoConsultaRepository } from '../../infrastructure/repositories/DiagnosticoConsultaRepository';
 import { TratamientoRepository } from '../../infrastructure/repositories/TratamientoRepository';
 
 export class CitaController {
+  // ✨ MODIFICADO: Agregar lógica para crear consulta solo si NO es grooming
   static async crear(req: Request, res: Response): Promise<void> {
     try {
       const repo = new CitaRepository();
@@ -41,7 +42,6 @@ export class CitaController {
     }
   }
 
-  // ✨ NUEVO: Endpoint para obtener citas con detalles
   static async listarConDetalles(req: Request, res: Response): Promise<void> {
     try {
       const repo = new CitaRepository();
@@ -82,7 +82,6 @@ export class CitaController {
     }
   }
 
-  // ✨ NUEVO: Endpoint para actualizar el paciente de una cita
   static async actualizarPaciente(req: Request, res: Response): Promise<void> {
     try {
       const idCita = parseInt(req.params.id);

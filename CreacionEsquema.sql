@@ -118,6 +118,7 @@ CREATE TABLE Cita (
     id_usuario_registro INT,
     fecha_hora DATETIME NOT NULL,
     estado ENUM('Pendiente', 'Atendida', 'Cancelada') DEFAULT 'Pendiente',
+    es_grooming BOOLEAN DEFAULT FALSE NOT NULL,
     comentario TEXT COMMENT 'Motivo de la cita',
     FOREIGN KEY (id_paciente) REFERENCES Paciente(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     FOREIGN KEY (id_doctor) REFERENCES Doctor(id),

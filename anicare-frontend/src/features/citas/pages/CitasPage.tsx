@@ -17,7 +17,7 @@ import {
   actualizarPacienteCita,
   atenderCitaCompleta 
 } from '../services/citaService';
-import ModalPacienteNuevo from '../components/ModalPacienteNuevo'; // ✨ NUEVO COMPONENTE
+import ModalPacienteNuevo from '../components/ModalPacienteNuevo';
 
 // Utilidad para convertir fechas UTC a local
 const fixUtcToLocalDisplay = (isoString: string) => {
@@ -40,6 +40,7 @@ interface Cita {
   doctor_apellido?: string;
   fecha_hora: string;
   estado: string;
+  es_grooming: boolean; // ✨ AGREGAR
   comentario: string;
   esPacienteNuevo?: boolean;
   paciente_nombre?: string;
@@ -69,16 +70,17 @@ export default function CitasPage() {
   // Modales
   const [modalNueva, setModalNueva] = useState(false);
   const [modalDetalle, setModalDetalle] = useState(false);
-  const [modalPacienteNuevo, setModalPacienteNuevo] = useState(false); // ✨ NUEVO
+  const [modalPacienteNuevo, setModalPacienteNuevo] = useState(false);
 
   // Datos del formulario
   const [fechaSeleccionada, setFechaSeleccionada] = useState<string | null>(null);
   const [comentario, setComentario] = useState('');
-  const [idPaciente, setIdPaciente] = useState<string | null>(''); // ✨ Ahora puede ser null
+  const [idPaciente, setIdPaciente] = useState<string | null>('');
   const [idDoctor, setIdDoctor] = useState('');
   const [hora, setHora] = useState('');
+  const [esGrooming, setEsGrooming] = useState(false); // ✨ NUEVO
   const [citaSeleccionada, setCitaSeleccionada] = useState<any | null>(null);
-  const [citaParaAsignarPaciente, setCitaParaAsignarPaciente] = useState<number | null>(null); // ✨ NUEVO
+  const [citaParaAsignarPaciente, setCitaParaAsignarPaciente] = useState<number | null>(null);
 
   useEffect(() => {
     cargarOpciones();
@@ -102,14 +104,12 @@ export default function CitasPage() {
 
   const cargarCitas = async () => {
     try {
-      // ✨ CAMBIO: Usar el endpoint con detalles
       const citasData = await obtenerCitasConDetalles();
 
       // Preparar datos para el calendario
       const eventosCalendario = citasData
         .filter((cita: Cita) => cita.estado !== 'Cancelada')
         .map((cita: Cita) => {
-          // ✨ Manejar "PACIENTE NUEVO"
           const titulo = cita.esPacienteNuevo 
             ? `PACIENTE NUEVO (${cita.estado})`
             : `${cita.paciente_nombre} (${cita.estado})`;
@@ -202,6 +202,7 @@ export default function CitasPage() {
     setComentario('');
     setIdPaciente('');
     setIdDoctor('');
+    setEsGrooming(false); // ✨ NUEVO
     setModalNueva(true);
   };
 
@@ -211,7 +212,6 @@ export default function CitasPage() {
       return;
     }
 
-    // ✨ CAMBIO: Permitir que idPaciente sea null
     if (idPaciente === '' && idPaciente !== null) {
       alert('Seleccione un paciente o "PACIENTE NUEVO"');
       return;
@@ -223,8 +223,9 @@ export default function CitasPage() {
       await crearCita({
         fecha_hora: fechaHora,
         comentario,
-        id_paciente: idPaciente === 'null' ? null : Number(idPaciente), // ✨ Convertir "null" a null
-        id_doctor: Number(idDoctor)
+        id_paciente: idPaciente === 'null' ? null : Number(idPaciente),
+        id_doctor: Number(idDoctor),
+        es_grooming: esGrooming // ✨ NUEVO
       });
       setModalNueva(false);
       cargarCitas();
@@ -267,13 +268,10 @@ export default function CitasPage() {
     }
   };
 
-  // ✨ MODIFICADO: Detectar si es PACIENTE NUEVO
   const atenderCita = async (idCita: number) => {
     try {
-      console.log(typeof idCita, 'cita viene')
       const cita = citas.find(c => c.id === idCita);
-      console.log(citas, 'citas')
-      console.log(cita, 'cita')
+      
       // Si es PACIENTE NUEVO, mostrar modal para crear propietario + paciente
       if (cita?.esPacienteNuevo) {
         setCitaParaAsignarPaciente(idCita);
@@ -282,7 +280,16 @@ export default function CitasPage() {
         return;
       }
 
-      // Si ya tiene paciente, atender normalmente
+      // ✨ Si es grooming, solo cambiar estado a Atendida
+      if (cita?.es_grooming) {
+        await actualizarEstadoCita(idCita, 'Atendida');
+        setModalDetalle(false);
+        alert('Cita de grooming marcada como atendida');
+        cargarCitas();
+        return;
+      }
+
+      // Si NO es grooming y tiene paciente, crear consulta y redirigir
       const resultado = await atenderCitaCompleta(idCita);
       setModalDetalle(false);
       navigate(`/consulta/${resultado.id_consulta}`);
@@ -291,20 +298,29 @@ export default function CitasPage() {
     }
   };
 
-  // ✨ NUEVO: Callback cuando se crea el paciente en el modal
   const handlePacienteCreado = async (idPaciente: number) => {
     try {
       if (citaParaAsignarPaciente) {
         // 1. Asignar el paciente a la cita
         await actualizarPacienteCita(citaParaAsignarPaciente, idPaciente);
         
-        // 2. Atender la cita
-        const resultado = await atenderCitaCompleta(citaParaAsignarPaciente);
+        // 2. ✨ Verificar si es cita de grooming
+        const cita = citas.find(c => c.id === citaParaAsignarPaciente);
         
-        // 3. Cerrar modal y navegar
-        setModalPacienteNuevo(false);
-        setCitaParaAsignarPaciente(null);
-        navigate(`/consulta/${resultado.id_consulta}`);
+        if (cita?.es_grooming) {
+          // Si es grooming, solo cambiar estado a Atendida
+          await actualizarEstadoCita(citaParaAsignarPaciente, 'Atendida');
+          setModalPacienteNuevo(false);
+          setCitaParaAsignarPaciente(null);
+          alert('Cita de grooming marcada como atendida');
+          cargarCitas();
+        } else {
+          // Si NO es grooming, crear consulta y redirigir
+          const resultado = await atenderCitaCompleta(citaParaAsignarPaciente);
+          setModalPacienteNuevo(false);
+          setCitaParaAsignarPaciente(null);
+          navigate(`/consulta/${resultado.id_consulta}`);
+        }
       }
     } catch (error: any) {
       alert(error.response?.data?.mensaje || 'Error al procesar la cita');
@@ -555,7 +571,7 @@ export default function CitasPage() {
                                 Atender
                               </button>
                             )}
-                                                        {cita.estado === 'Atendida' && (
+                            {cita.estado === 'Atendida' && (
                               <button
                                 className="btn btn-sm btn-outline-primary"
                                 onClick={() => navigate(`/paciente/${cita.id_paciente}/historial`)}
@@ -610,7 +626,6 @@ export default function CitasPage() {
                   />
                 </div>
 
-                {/* ✨ CAMBIO: Dropdown con PACIENTE NUEVO */}
                 <div className="mb-3">
                   <label className="form-label">Paciente *</label>
                   <select 
@@ -648,6 +663,24 @@ export default function CitasPage() {
                     ))}
                   </select>
                 </div>
+
+                {/* ✨ NUEVO: Checkbox de Grooming */}
+                <div className="mb-3 form-check">
+                  <input
+                    type="checkbox"
+                    className="form-check-input"
+                    id="esGrooming"
+                    checked={esGrooming}
+                    onChange={(e) => setEsGrooming(e.target.checked)}
+                  />
+                  <label className="form-check-label" htmlFor="esGrooming">
+                    <strong>Es cita de Grooming</strong> (no crear consulta médica automáticamente)
+                  </label>
+                  <div className="form-text">
+                    Marque esta opción solo para citas de baño, corte de pelo u otros servicios de grooming que no requieren consulta veterinaria.
+                  </div>
+                </div>
+
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={() => setModalNueva(false)}>
@@ -716,7 +749,7 @@ export default function CitasPage() {
         </div>
       )}
 
-      {/* ✨ NUEVO: Modal para crear propietario + paciente */}
+      {/* Modal para crear propietario + paciente */}
       {modalPacienteNuevo && (
         <ModalPacienteNuevo
           onClose={() => {

@@ -11,13 +11,14 @@ export class CitaRepository implements ICitaRepository {
       id_doctor,
       id_usuario_registro,
       fecha_hora,
+      es_grooming, // ✨ AGREGAR
       comentario
     } = data;
 
     const [result]: any = await pool.query(
-      `INSERT INTO Cita (id_paciente, id_doctor, id_usuario_registro, fecha_hora, estado, comentario)
-       VALUES (?, ?, ?, ?, 'Pendiente', ?)`,
-      [id_paciente, id_doctor, id_usuario_registro, toMySQLDateTime(fecha_hora.toString()), comentario]
+      `INSERT INTO Cita (id_paciente, id_doctor, id_usuario_registro, fecha_hora, estado, es_grooming, comentario)
+       VALUES (?, ?, ?, ?, 'Pendiente', ?, ?)`, // ✨ AGREGAR es_grooming
+      [id_paciente, id_doctor, id_usuario_registro, toMySQLDateTime(fecha_hora.toString()), es_grooming, comentario] // ✨ AGREGAR es_grooming
     );
     
     return new Cita(
@@ -27,6 +28,7 @@ export class CitaRepository implements ICitaRepository {
       id_usuario_registro,
       fecha_hora,
       'Pendiente',
+      es_grooming, // ✨ AGREGAR
       comentario
     );
   }
@@ -41,6 +43,7 @@ export class CitaRepository implements ICitaRepository {
         row.id_usuario_registro,
         localStringToDatePreservingTime(row.fecha_hora),
         row.estado,
+        row.es_grooming, // ✨ AGREGAR
         row.comentario
       )
     );
@@ -69,7 +72,7 @@ export class CitaRepository implements ICitaRepository {
     `);
     
     return rows.map((row: any) => ({
-      ...row,
+      ...row, // ✨ El c.* ya incluye es_grooming, no hace falta agregarlo explícitamente
       fecha_hora: localStringToDatePreservingTime(row.fecha_hora),
       esPacienteNuevo: row.id_paciente === null
     }));
@@ -87,6 +90,7 @@ export class CitaRepository implements ICitaRepository {
       row.id_usuario_registro,
       localStringToDatePreservingTime(row.fecha_hora),
       row.estado,
+      row.es_grooming, // ✨ AGREGAR
       row.comentario
     );
   }
