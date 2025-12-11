@@ -135,45 +135,45 @@ CREATE TABLE Consulta (
     id_cita INT NULL,
     fecha_hora DATETIME NOT NULL,
     estado ENUM('Abierta', 'Finalizada', 'Cancelada') DEFAULT 'Abierta',
-    
+
     -- Examen Clínico Básico
     motivo_consulta TEXT COMMENT 'Motivo de la consulta',
     notas_adicionales TEXT,
-    
+
     -- Signos Vitales Básicos
     peso DECIMAL(5,2),
     temperatura DECIMAL(4,2),
     frecuencia_cardiaca INT,
     frecuencia_respiratoria INT,
-    
+
     -- ✨ NUEVOS CAMPOS: Anamnesis e Historia Clínica
     anamnesis TEXT COMMENT 'Entorno, ambiente, contexto del paciente',
     historia_clinica TEXT COMMENT 'Medicamentos actuales, cirugías previas, antecedentes',
-    
+
     -- ✨ NUEVOS CAMPOS: Signos Vitales Adicionales
     pulso_arterial VARCHAR(100) COMMENT 'Ej: Fuerte, regular',
     tllc VARCHAR(50) COMMENT 'Tiempo de llenado capilar. Ej: < 2 segundos',
     color_mucosas VARCHAR(100) COMMENT 'Ej: Rosado pálido',
-    
+
     -- ✨ NUEVOS CAMPOS: Evaluación General
     condicion_corporal VARCHAR(50) COMMENT 'BCS (Body Condition Score). Ej: 4/9',
     estado_hidratacion VARCHAR(100) COMMENT 'Ej: < 2% pérdida',
     estado_mental VARCHAR(100) COMMENT 'Ej: Alerta, Apático, Estuporoso',
-    
+
     -- ✨ NUEVOS CAMPOS: Exploración Respiratoria
     palmo_percusion_toracica TEXT COMMENT 'Ej: Sonido claro, resonante',
     auscultacion_pulmonar TEXT COMMENT 'Ej: Sonidos vesiculares normales',
-    
+
     -- ✨ NUEVOS CAMPOS: Reflejos Fisiológicos
     reflejo_tusigeno VARCHAR(100) COMMENT 'Ej: Positivo, Ausente',
     reflejo_deglutorio VARCHAR(100) COMMENT 'Ej: Presente, Alterado',
-    
+
     -- ✨ NUEVOS CAMPOS: Otros Hallazgos
     postura_marcha TEXT COMMENT 'Ej: Normal, Cojera en miembro posterior derecho',
-    
+
     -- ✨ NUEVO CAMPO: Laboratorios
     laboratorios TEXT COMMENT 'Laboratorios realizados, resultados y observaciones',
-    
+
     FOREIGN KEY (id_paciente) REFERENCES Paciente(id),
     FOREIGN KEY (id_doctor) REFERENCES Doctor(id),
     FOREIGN KEY (id_usuario_registro) REFERENCES Usuario(id),
@@ -323,6 +323,8 @@ INSERT INTO Raza (id_especie, nombre, descripcion, especie_personalizada) VALUES
 -- Doctor de ejemplo
 INSERT INTO Doctor (id_usuario, nombre, apellido, especialidad, dpi, telefono, correo, activo) VALUES
 (2, 'Ana', 'Maldonado', 'Medicina veterinaria', '1234567890101', '55556666', 'ana@anicare.com', true);
+INSERT INTO Doctor (id_usuario, nombre, apellido, especialidad, dpi, telefono, correo, activo) VALUES
+(2, 'Jose', 'Perez', 'Estilista', '3214567890101', '55556623', 'jose@anicare.com', true);
 
 -- Diagnóstico placeholder
 INSERT INTO Diagnostico (id, nombre, descripcion) VALUES
